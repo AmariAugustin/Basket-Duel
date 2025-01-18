@@ -1,0 +1,14 @@
+3. Basket Duel
+Basket Duel est un jeu de sport compétitif en 2D où deux joueurs s'affrontent au tour par tour sur un terrain de basket. Le but du jeu est de marquer un panier en lançant un ballon à travers un panier placé de manière aléatoire sur le terrain. Les joueurs contrôlent chacun un avatar qui peut tirer vers le panier en fonction des éléments aléatoires et des choix tactiques. On peut jouer face à un joueur réel (local ou distant via un réseau local) ou virtuel (une « IA »).
+
+3.1 Terrain de jeu
+Le terrain est en 2D avec une vue depuis les gradins. Les dimensions du terrain sont fixes, mais la position du panier et du joueur sont générées de manière aléatoire. Chaque joueur prend la main au tour par tour.
+
+3.2 Déroulement d’un tour
+Lorsqu’un joueur est prêt à tirer, il choisit la direction du tir (en angle) et la force du tir. Le tir suit ensuite une trajectoire parabolique, qui peut être modifiée par l’angle et la puissance du lancer.
+
+La trajectoire est calculée en prenant en compte la gravité et la position du panier. Un tir réussit si la trajectoire du ballon passe à travers le cercle du panier. Si la balle touche le panier sans passer à travers, c’est considéré comme un échec. Le jeu affiche un message de succès ou d’échec, et les points sont attribués en fonction de la réussite.
+
+3.3 Points bonus
+Divers éléments bonus flottent à des positions aléatoires au-dessus du terrain. Ils permettent d’ajuster combien de points rapporte le tir et peuvent même en affecter la trajectoire.
+
