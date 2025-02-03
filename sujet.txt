@@ -11,4 +11,6 @@ La trajectoire est calculée en prenant en compte la gravité et la position du 
 
 3.3 Points bonus
 Divers éléments bonus flottent à des positions aléatoires au-dessus du terrain. Ils permettent d’ajuster combien de points rapporte le tir et peuvent même en affecter la trajectoire.
+"""
 
+"""
