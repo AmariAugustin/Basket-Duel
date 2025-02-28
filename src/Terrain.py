@@ -14,8 +14,8 @@ class Terrain:
         self.terrainAsset = pg.image.load("assets/terrain.png")
         self.balle = pg.image.load("assets/basketball.png") 
         self.balle = pg.transform.scale(self.balle, (50, 50))
-        self.panier = pg.image.load("assets/hoop.png")
-        self.panier = pg.transform.scale(self.panier, (50,50))
+        self.panier = pg.image.load("assets/panier.png")
+        self.panier = pg.transform.scale(self.panier, (250,250))
         
     def genererPositionPanier(self):  
         return [random.randint(0, self.largeur - 100), random.randint(0, self.hauteur - 100)]
@@ -29,8 +29,7 @@ class Terrain:
         fenetre.blit(self.balle, position)
         
     def afficherPanier(self, fenetre):
-        position = self.genererPositionPanier()
-        fenetre.blit(self.panier, position)
+        fenetre.blit(self.panier, self.positionPanier)
 # Test
 terrain = Terrain()
 print(terrain.genererPositionPanier())
