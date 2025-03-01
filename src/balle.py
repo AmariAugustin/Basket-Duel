@@ -15,6 +15,7 @@ class Balle:
         self.offset_y = 0
         self.start_drag_pos = None
         self.shooting_mode = False
+        self.prev_mouse_pos = None  # Ajoutez cette ligne
         
         # init du sprite de la balle
         self.balle_image = pg.transform.scale(pg.image.load("assets/basketball.png"), (50, 50))
@@ -27,7 +28,7 @@ class Balle:
 
         # gravité (tire vers le bas)
         self.velocity_y += self.gravity
-        self.position[0] += self.velocity_x
+        self.position[0] -= self.velocity_x
         self.position[1] += self.velocity_y
 
         # friction (ralentis avec le temps)
@@ -44,10 +45,11 @@ class Balle:
         self.rect.topleft = self.position
 
     def handle_event(self, event, joueur_position):
-        # Gestion de la soris (drag ou shoot mode)
+        # Gestion de la souris (drag ou shoot mode)
         if event.type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
             self.dragging = True
             self.start_drag_pos = event.pos
+            self.prev_mouse_pos = event.pos  # Ajoutez cette ligne
             mouse_x, mouse_y = event.pos
             self.offset_x = self.rect.x - mouse_x
             self.offset_y = self.rect.y - mouse_y
@@ -58,10 +60,19 @@ class Balle:
             if self.shooting_mode:
                 end_drag_pos = event.pos
                 self.shoot_from_drag(self.start_drag_pos, end_drag_pos)
+            else:
+                # Calculer la vitesse et l'angle en fonction du mouvement de la souris
+                dx = event.pos[0] - self.prev_mouse_pos[0]
+                dy = event.pos[1] - self.prev_mouse_pos[1]
+                distance = math.hypot(dx, dy)
+                angle = math.degrees(math.atan2(dy, dx))
+                strength = distance / 10  # Ajustez la sensibilité si nécessaire
+                self.shoot(angle, strength)
         elif event.type == pg.MOUSEMOTION and self.dragging:
             mouse_x, mouse_y = event.pos
             self.position = [mouse_x + self.offset_x, mouse_y + self.offset_y]
             self.rect.topleft = self.position
+            self.prev_mouse_pos = event.pos  # Ajoutez cette ligne
 
     def shoot_from_drag(self, start_pos, end_pos):
         # calcul shoot mode
@@ -69,7 +80,7 @@ class Balle:
         dy = start_pos[1] - end_pos[1]
         distance = math.hypot(dx, dy)
         angle = math.degrees(math.atan2(dy, dx))
-        strength = distance / 10  #possible de scale la sensibilité du mode
+        strength = distance / 10  # possible de scale la sensibilité du mode
         self.shoot(angle, strength)
 
     def shoot(self, angle, strength):

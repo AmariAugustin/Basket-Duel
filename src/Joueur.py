@@ -11,7 +11,7 @@ class Joueur:
         self.rect.topleft = self.position
 
     def genererPositionJoueur(self): #crée position joueur (comme panier)
-        return [random.randint(0, 1280 - self.rect.width), random.randint(0, 720 - self.rect.height)]
+        return [random.randint(0, 640), random.randint(536, 720 - self.rect.height)]
 
     def draw(self, fenetre): #dessine joueur
         fenetre.blit(self.joueur_image, self.position)

@@ -8,8 +8,8 @@ os.chdir(sourceFileDir)
 
 class Terrain:
     def __init__(self):  
-        self.largeur = 1000
-        self.hauteur = 1000
+        self.largeur = 1280
+        self.hauteur = 720
         self.positionPanier = self.genererPositionPanier()  
         self.terrainAsset = pg.image.load("assets/terrain.png")
         self.balle = pg.image.load("assets/basketball.png") 
@@ -18,7 +18,7 @@ class Terrain:
         self.panier = pg.transform.scale(self.panier, (250,250))
         
     def genererPositionPanier(self):  
-        return [random.randint(0, self.largeur - 100), random.randint(0, self.hauteur - 100)]
+        return [random.randint(640, self.largeur - 100), random.randint(200, self.hauteur - 300)]
     
     # def genererPositionJoueur(self):
 
