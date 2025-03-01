@@ -3,13 +3,19 @@ import sys
 from Joueur import Joueur
 from Terrain import Terrain
 from balle import Balle
-from Partie import Partie
 import os
 import time
 import random
 
 pg.init()
 clock = pg.time.Clock()
+
+class Partie:
+    def __init__(self):#stocke le score
+        self.score = 0
+
+    def reset(self):# reset le score
+        self.score = 0
 
 # Chargement des fichiers
 sourceFileDir = os.path.dirname(os.path.abspath(__file__))
@@ -21,9 +27,10 @@ fenetre = pg.display.set_mode((1280, 720))
 
 background_image = pg.image.load("assets/levon.png")
 
-#init du terrain,balle,joueur,partie
+#init du terrain,balle,joueur,partie 
 terrain = Terrain()
 joueur = Joueur()
+
 # Initialisez la balle avec le mode shooting activé par défaut
 balle = Balle([joueur.position[0], joueur.position[1]], speed=2)
 balle.shooting_mode = True  # Activez le mode shooting par défaut

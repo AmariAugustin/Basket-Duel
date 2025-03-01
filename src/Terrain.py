@@ -1,6 +1,7 @@
 import random
 import pygame as pg 
 import os 
+import Joueur
 
 #Chargement des fichiers
 sourceFileDir=os.path.dirname(os.path.abspath(__file__))
@@ -19,8 +20,6 @@ class Terrain:
         
     def genererPositionPanier(self):  
         return [random.randint(640, self.largeur - 100), random.randint(200, self.hauteur - 300)]
-    
-    # def genererPositionJoueur(self):
 
     def afficherTerrain(self,fenetre):
         fenetre.blit(self.terrainAsset, (0, 0))
