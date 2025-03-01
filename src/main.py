@@ -23,12 +23,16 @@ background_image = pg.image.load("assets/levon.png")
 
 #init du terrain,balle,joueur,partie
 terrain = Terrain()
-balle = Balle([100, 100], speed=2)
 joueur = Joueur()
+# Initialisez la balle avec le mode shooting activé par défaut
+balle = Balle([joueur.position[0], joueur.position[1]], speed=2)
+balle.shooting_mode = True  # Activez le mode shooting par défaut
 partie = Partie()
+
 #verifie les collisions pour les paniers
 def check_collision(balle_rect, panier_rect):
     return balle_rect.colliderect(panier_rect)
+
 #empeche de spawn en dehors de la map
 def is_hitbox_within_terrain(hitbox, terrain_width, terrain_height):
     return (hitbox.left >= 0 and hitbox.right <= terrain_width and
@@ -58,10 +62,9 @@ def reset_game():
     global joueur, terrain, balle, score, start_time, game_started, selecting_game_mode
     joueur = Joueur()
     terrain.positionPanier = terrain.genererPositionPanier()
-    balle.position = [100, 100]
-    balle.rect.topleft = balle.position
-    balle.velocity_x = 0
-    balle.velocity_y = 0
+    # Réinitialisez la balle à la position du joueur et en mode shooting
+    balle = Balle([joueur.position[0], joueur.position[1]], speed=2)
+    balle.shooting_mode = True
     score = 0
     start_time = time.time()
     game_started = False
@@ -72,7 +75,6 @@ def reset_game():
 show_hitboxes = False
 last_hoop_time = 0
 cooldown = 1  #cooldown entre chaque paniers (en s)
-shooting_mode = False
 game_started = False
 score = 0
 start_time = time.time()
@@ -124,14 +126,7 @@ while True:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_j:
                     show_hitboxes = not show_hitboxes
-                if event.key == pg.K_u:
-                    shooting_mode = not shooting_mode
-                    balle.shooting_mode = shooting_mode
-                    if shooting_mode:
-                        balle.position = joueur.position[:]
-                        balle.rect.topleft = balle.position
-                        balle.velocity_x = 0
-                        balle.velocity_y = 0
+                # Supprimez la partie pour changer le mode de tir avec la touche 'u'
     
     fenetre.fill((255, 255, 255))
     
@@ -145,9 +140,15 @@ while True:
             draw_button(fenetre, "Menu Principal", go_back_button_rect, (255, 0, 0), (200, 0, 0))
         else:
             terrain.afficherTerrain(fenetre)
+            
+            # Si la balle est en mode shooting et n'est pas en train d'être traînée, attachez-la au joueur
+            if balle.shooting_mode and not balle.dragging and not balle.flying:
+                balle.position = [joueur.position[0], joueur.position[1] - 30]
+                balle.rect.topleft = balle.position
+            
+            joueur.draw(fenetre)
             balle.update_position(fenetre.get_width(), fenetre.get_height())
             balle.draw(fenetre)
-            joueur.draw(fenetre)
             
             draw_text(fenetre, f"Score: {score}", (640, 50), 50, (0, 0, 0))
             draw_text(fenetre, f"Temps: {int(remaining_time)}s", (1180, 50), 50, (0, 0, 0))
@@ -175,6 +176,9 @@ while True:
                 last_hoop_time = current_time
                 score += 1
                 partie.score = score
+                # Réinitialisez la balle en mode shooting après un panier
+                balle.shooting_mode = True
+                balle.flying = False
             
             if not is_hitbox_within_terrain(panier_rect, terrain.largeur, terrain.hauteur):
                 terrain.positionPanier = terrain.genererPositionPanier()
