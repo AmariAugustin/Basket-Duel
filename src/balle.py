@@ -4,16 +4,16 @@ import math
 class Balle:
     def __init__(self, position, speed=1, gravity=0.5, friction=0.99):
         # init de la balle
-        self.position = position
+        self.position = position # Position de la balle sous la forme [x, y]
         self.speed = speed
         self.gravity = gravity
         self.friction = friction
-        self.velocity_x = 0
-        self.velocity_y = 0
-        self.dragging = False
-        self.offset_x = 0
+        self.velocity_x = 0 # Vitesse horizontale
+        self.velocity_y = 0 # Vitesse verticale
+        self.dragging = False # Indique si la balle est en train d'être déplacée
+        self.offset_x = 0 # Decalage de la position de la souris
         self.offset_y = 0
-        self.start_drag_pos = None
+        self.start_drag_pos = None # Position de la souris au début du drag
         self.shooting_mode = True  # Mode shooting activé par défaut
         self.flying = False  # Indique si la balle est en vol (après un tir)
         self.prev_mouse_pos = None
@@ -42,11 +42,11 @@ class Balle:
             if self.position[0] <= 0 or self.position[0] + self.rect.width >= window_width:
                 self.velocity_x = -self.velocity_x * 0.7
             if self.position[1] + self.rect.height >= window_height:
-                self.position[1] = window_height - self.rect.height
-                self.velocity_y = -self.velocity_y * 0.7
+                self.position[1] = window_height - self.rect.height # Empêche la balle de passer à travers le sol
+                self.velocity_y = -self.velocity_y * 0.7 # Rebondit sur le sol
                 
                 # Si la balle touche le sol et a presque arrêté de rebondir, retourne en mode shooting
-                if abs(self.velocity_y) < 0.5 and abs(self.velocity_x) < 0.5:
+                if abs(self.velocity_y) < 0.5 and abs(self.velocity_x) < 0.5: # Test si la balle est presque immobile
                     self.shooting_mode = True
                     self.flying = False
 
@@ -58,8 +58,8 @@ class Balle:
             # Si la balle est en mode shooting et proche du joueur, permet de la saisir
             if self.shooting_mode and self.rect.collidepoint(event.pos):
                 self.dragging = True
-                self.start_drag_pos = event.pos
-                self.prev_mouse_pos = event.pos
+                self.start_drag_pos = event.pos # Enregistre la position de la souris au début du drag
+                self.prev_mouse_pos = event.pos 
                 mouse_x, mouse_y = event.pos
                 self.offset_x = self.rect.x - mouse_x
                 self.offset_y = self.rect.y - mouse_y
@@ -73,7 +73,7 @@ class Balle:
             self.flying = True  # La balle est maintenant en vol
             self.shooting_mode = False  # Désactive le mode shooting pendant le vol
         
-        # Gestion du mouvement de la souris pendant le drag
+        # Gestion du mouvement de la souris pendant le drag, met a jour la position de la balle
         elif event.type == pg.MOUSEMOTION and self.dragging:
             mouse_x, mouse_y = event.pos
             self.position = [mouse_x + self.offset_x, mouse_y + self.offset_y]
@@ -84,9 +84,9 @@ class Balle:
         # Calcul de la direction et de la force du tir
         dx = start_pos[0] - end_pos[0]
         dy = start_pos[1] - end_pos[1]
-        distance = math.hypot(dx, dy)
-        angle = math.degrees(math.atan2(dy, dx))
-        strength = distance / 10  # Ajustez pour contrôler la sensibilité
+        distance = math.hypot(dx, dy) # Distance entre les deux points 
+        angle = math.degrees(math.atan2(dy, dx)) # Angle entre les deux points ahan 2 donne l'angle et degrees le convertit en degrés
+        strength = distance / 10  
         self.shoot(angle, strength)
 
     def shoot(self, angle, strength):
