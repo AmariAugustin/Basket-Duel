@@ -194,4 +194,21 @@ class Balle:
         # Instructions
         instruction_text = font.render("Cliquez sur les curseurs pour ajuster, ailleurs pour tirer", True, (255, 255, 255))
         fenetre.blit(instruction_text, (10, 370))
-    
+        
+        # Dessiner un indicateur de direction de tir basé sur l'angle et la puissance actuels
+        start_x = self.position[0] + 25
+        start_y = self.position[1] + 25
+            
+        # Convertir l'angle en radians pour les calculs
+        radian_angle = math.radians(self.angle_value)
+        
+        # Calculer le point d'arrivée en fonction de l'angle et de la puissance
+        indicator_length = self.power_value * 1.5
+        end_x = start_x - indicator_length * math.cos(radian_angle)
+        end_y = start_y - indicator_length * math.sin(radian_angle)
+        
+        # Dessiner la ligne d'indication
+        pg.draw.line(fenetre, (255, 0, 0), (start_x, start_y), (end_x, end_y), 10)
+        pg.draw.polygon(fenetre, (255, 0, 0), [(end_x+5, end_y), (end_x - 10, end_y - 5), (end_x - 10, end_y + 5)])
+        
+        
