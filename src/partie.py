@@ -178,3 +178,5 @@ class Partie:
         balle.shooting_mode = True
         balle.flying = False
         self.reset()
+
+        
