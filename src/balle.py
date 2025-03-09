@@ -209,6 +209,6 @@ class Balle:
         
         # Dessiner la ligne d'indication
         pg.draw.line(fenetre, (255, 0, 0), (start_x, start_y), (end_x, end_y), 10)
-        pg.draw.polygon(fenetre, (255, 0, 0), [(end_x+5, end_y+5), (end_x - 10, end_y - 5), (end_x - 10, end_y + 5)])
+        pg.draw.polygon(fenetre, (255, 0, 0), [(end_x, end_y), (end_x - 10, end_y - 5), (end_x - 10, end_y + 5)])
         
         
