@@ -87,7 +87,7 @@ class Partie:
         
         if self.game_started:
             balle.handle_event(event, joueur.position)
-            if event.type == pg.KEYDOWN:
+            if event.type == pg.KEYDOWN:#si tu appuyes sur J, dessine les hitbox
                 if event.key == pg.K_j:
                     self.show_hitboxes = not self.show_hitboxes
     
@@ -98,7 +98,7 @@ class Partie:
         if self.game_started:
             remaining_time = self.get_remaining_time()
             
-            if remaining_time == 0:
+            if remaining_time == 0: #affiche écran de fin quand plus de temps
                 fenetre.blit(background_image, (0, 0))
                 self.draw_text(fenetre, f"Score: {self.score}", (640, 360), 100, (255, 255, 255))
                 self.draw_button(fenetre, "Menu Principal", self.go_back_button_rect, (255, 0, 0), (200, 0, 0))
@@ -140,9 +140,9 @@ class Partie:
         panier_rect = pg.Rect(panier_rect_full.left, panier_rect_full.top + 10, panier_rect_full.width, hitbox_height)
         
         current_time = time.time()
-        if self.check_collision(balle_rect, panier_rect) and (current_time - self.last_hoop_time) > self.cooldown:
-            terrain.positionPanier = terrain.genererPositionPanier()
-            self.last_hoop_time = current_time
+        if self.check_collision(balle_rect, panier_rect) and (current_time - self.last_hoop_time) > self.cooldown:  #si collision + pas en cooldown
+            terrain.positionPanier = terrain.genererPositionPanier() #bouge panier
+            self.last_hoop_time = current_time #reset cooldown
             self.score += 1
             # Réinitialisation de la balle en mode shooting après un panier
             balle.shooting_mode = True
