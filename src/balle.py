@@ -21,6 +21,9 @@ class Balle:
         # init du sprite de la balle
         self.balle_image = pg.transform.scale(pg.image.load("assets/basketball.png"), (50, 50))
         self.rect = self.balle_image.get_rect(topleft=self.position)
+        
+        # Nouveau: attribut pour le tir au curseur
+        self.console_shot_requested = False
 
     def update_position(self, window_width, window_height):
         # Si la balle est attachée au joueur, on ne met pas à jour sa position
@@ -53,6 +56,12 @@ class Balle:
         self.rect.topleft = self.position
 
     def handle_event(self, event, joueur_position):
+        # Ajout de la gestion de la touche pour le tir au curseur (par exemple 'C')
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_c and self.shooting_mode and not self.flying:
+                self.request_console_shot()
+                return
+                
         # Gestion du clic sur la balle uniquement en mode shooting
         if event.type == pg.MOUSEBUTTONDOWN:
             # Si la balle est en mode shooting et proche du joueur, permet de la saisir
@@ -79,6 +88,27 @@ class Balle:
             self.position = [mouse_x + self.offset_x, mouse_y + self.offset_y]
             self.rect.topleft = self.position
             self.prev_mouse_pos = event.pos
+
+    def request_console_shot(self):
+        # Demande l'angle et la puissance dans la console
+        try:
+            print("\n--- Tir au curseur ---")
+            angle = float(input("Entrez l'angle de tir (en degrés, 0-360): "))
+            strength = float(input("Entrez la puissance de tir (1-100): "))
+            
+            # Limiter les valeurs à des plages raisonnables
+            angle = max(0, min(360, angle))
+            strength = max(1, min(100, strength)) / 2
+            
+            print(f"Tir avec angle={angle}° et puissance={strength*2}")
+            self.shoot(angle, strength)
+            self.flying = True
+            self.shooting_mode = False
+            
+        except ValueError:
+            print("Erreur: Veuillez entrer des nombres valides.")
+        except Exception as e:
+            print(f"Erreur: {e}")
 
     def shoot_from_drag(self, start_pos, end_pos):
         # Calcul de la direction et de la force du tir
