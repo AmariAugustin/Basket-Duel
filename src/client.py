@@ -1,0 +1,27 @@
+import socket
+
+class Client:
+    def __init__(self):
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.s.connect(("localhost", 1111))
+    
+    def send(self,msg):
+        self.s.send(msg.encode())
+
+    def receive(self):
+        return self.s.recv(9999999)
+    
+    def close(self):
+        self.s.close()
+
+
+# Test
+client = Client()
+
+while True:
+    msg = input("Entrez un message: ")
+    client.send(msg)
+    print(client.receive())
+    if msg == "exit":
+        break
+
