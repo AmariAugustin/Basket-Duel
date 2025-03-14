@@ -1,7 +1,7 @@
 import pygame as pg
 import math
 import serveur
-import client
+
 
 class Balle:
     def __init__(self, position, speed=1, gravity=0.5, friction=0.99):
