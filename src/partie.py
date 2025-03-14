@@ -116,6 +116,8 @@ class Partie:
                 
                 self.draw_text(fenetre, f"Score: {self.score}", (640, 50), 50, (0, 0, 0))
                 self.draw_text(fenetre, f"Temps: {int(remaining_time)}s", (1180, 50), 50, (0, 0, 0))
+                # Ajout d'une instruction pour le tir manuel
+                self.draw_text(fenetre, "Appuyez sur C pour tir manuel", (640, 100), 24, (0, 0, 0))
                 
                 self.check_panier_collision(terrain, balle)
                 terrain.afficherPanier(fenetre)
@@ -176,3 +178,5 @@ class Partie:
         balle.shooting_mode = True
         balle.flying = False
         self.reset()
+
+        
