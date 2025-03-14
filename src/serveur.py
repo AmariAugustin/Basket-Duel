@@ -24,7 +24,7 @@ class Serveur:
         self.s.close()
   
 s = Serveur()
-
+"""
 s.run()
 while True:
    print(s.receive())
@@ -33,3 +33,4 @@ while True:
    if msg == "exit":
        break
 s.close()
+"""

@@ -1,5 +1,7 @@
 import pygame as pg
 import math
+import serveur
+import client
 
 class Balle:
     def __init__(self, position, speed=1, gravity=0.5, friction=0.99):
@@ -66,8 +68,9 @@ class Balle:
         self.rect.topleft = self.position
 
     def handle_event(self, event, joueur_position):
+        s = serveur.Serveur()
         # Gestion du mode sélecteur d'angle et de puissance
-        if self.show_shot_selectors:
+        if self.show_shot_selectors:            
             if event.type == pg.MOUSEBUTTONDOWN:
                 # Si l'utilisateur a cliqué, vérifier s'il a cliqué sur un sélecteur
                 mouse_pos = pg.mouse.get_pos()
@@ -106,6 +109,18 @@ class Balle:
             if event.key == pg.K_c and self.shooting_mode and not self.flying:
                 # Activer le mode sélecteur plutôt que de demander des entrées console
                 self.show_shot_selectors = True
+                return
+            
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_a and self.shooting_mode and not self.flying:
+                s.run()
+                s.send("Envoyer l'angle")
+                angle = int(s.receive().decode())
+                s.send("Envoyer la force")  
+                force = int(s.receive().decode())
+                self.shoot(angle, force)
+                self.flying = True
+                self.shooting_mode = False  
                 return
                 
         # Gestion du clic sur la balle uniquement en mode shooting

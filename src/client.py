@@ -19,9 +19,9 @@ class Client:
 client = Client()
 
 while True:
-    msg = input("Entrez un message: ")
+    msgR = client.receive()
+    msg = input(msgR.decode())
     client.send(msg)
-    print(client.receive())
     if msg == "exit":
         break
 
