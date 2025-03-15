@@ -4,7 +4,7 @@ import time
 class Partie:
     def __init__(self):
         # Initialisation des paramètres de la partie
-        self.score = 0
+        self.score = [0, 0] # Score du joueur 1 et du joueur 2/IA
         self.start_time = time.time()
         self.game_duration = 60
         self.game_started = False
@@ -23,7 +23,7 @@ class Partie:
 
     def reset(self):
         # Réinitialisation de la partie
-        self.score = 0
+        self.score = [0, 0]
         self.start_time = time.time()
         self.game_started = False
         self.selecting_game_mode = False
@@ -100,7 +100,7 @@ class Partie:
             
             if remaining_time == 0: #affiche écran de fin quand plus de temps
                 fenetre.blit(background_image, (0, 0))
-                self.draw_text(fenetre, f"Score: {self.score}", (640, 360), 100, (255, 255, 255))
+                self.draw_text(fenetre, f"Score: {self.score[0]}", (640, 360), 100, (255, 255, 255))
                 self.draw_button(fenetre, "Menu Principal", self.go_back_button_rect, (255, 0, 0), (200, 0, 0))
             else:
                 terrain.afficherTerrain(fenetre)
@@ -114,7 +114,7 @@ class Partie:
                 balle.update_position(fenetre.get_width(), fenetre.get_height())
                 balle.draw(fenetre)
                 
-                self.draw_text(fenetre, f"Score: {self.score}", (640, 50), 50, (0, 0, 0))
+                self.draw_text(fenetre, f"Score: {self.score[0]}", (640, 50), 50, (0, 0, 0))
                 self.draw_text(fenetre, f"Temps: {int(remaining_time)}s", (1180, 50), 50, (0, 0, 0))
                 # Ajout d'une instruction pour le tir manuel
                 self.draw_text(fenetre, "Appuyez sur C pour tir manuel", (640, 100), 24, (0, 0, 0))
@@ -145,7 +145,7 @@ class Partie:
         if self.check_collision(balle_rect, panier_rect) and (current_time - self.last_hoop_time) > self.cooldown:  #si collision + pas en cooldown
             terrain.positionPanier = terrain.genererPositionPanier() #bouge panier
             self.last_hoop_time = current_time #reset cooldown
-            self.score += 1
+            self.score[0] += 1
             # Réinitialisation de la balle en mode shooting après un panier
             balle.shooting_mode = True
             balle.flying = False
