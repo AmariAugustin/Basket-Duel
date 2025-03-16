@@ -146,7 +146,7 @@ class Partie:
                 self.draw_text(fenetre, f"Temps: {int(remaining_time)}s", (640, 50), 50, (0, 0, 0))
                 self.draw_text(fenetre, f"Tour: Joueur {self.current_player + 1}", (640, 80), 30, (0, 0, 0))
 
-                self.check_panier_collision(terrain, balle)
+                self.check_panier_collision(terrain, balle, joueur)
                 terrain.afficherPanier(fenetre)
 
                 if self.show_hitboxes:
@@ -161,7 +161,7 @@ class Partie:
                 self.draw_button(fenetre, "Single Player", self.single_player_button_rect, (0, 255, 0), (0, 200, 0))
                 self.draw_button(fenetre, "Multiplayer", self.multiplayer_button_rect, (0, 0, 255), (0, 0, 200))
     
-    def check_panier_collision(self, terrain, balle):
+    def check_panier_collision(self, terrain, balle, joueur):
         # Vérification des collisions avec le panier
         balle_rect = balle.rect
         panier_rect_full = terrain.panier.get_rect(topleft=terrain.positionPanier)
@@ -175,10 +175,13 @@ class Partie:
             self.score[self.current_player] += 1
             balle.shooting_mode = True # réinitialision de la balle en mode shooting après un panier
             balle.flying = False
+            joueur.position = joueur.genererPositionJoueur()
             self.switch_turn() # on change de joueur après un panier
         
         if not self.is_hitbox_within_terrain(panier_rect, terrain.largeur, terrain.hauteur):
             terrain.positionPanier = terrain.genererPositionPanier()
+            
+
     
     def draw_hitboxes(self, fenetre, terrain, balle):
         # Affichage des hitboxes pour le débogage
