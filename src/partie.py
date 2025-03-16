@@ -1,10 +1,12 @@
 import pygame as pg
 import time
+import random
 
 class Partie:
     def __init__(self):
         # Initialisation des paramètres de la partie
-        self.score = [0, 0] # Score du joueur 1 et du joueur 2/IA
+        self.score = [0, 0]  # Score du joueur 1 et du joueur 2/IA
+        self.current_player = 0  # 0 pour joueur 1, 1 pour joueur 2/IA
         self.start_time = time.time()
         self.game_duration = 60
         self.game_started = False
@@ -12,7 +14,8 @@ class Partie:
         self.show_hitboxes = False
         self.last_hoop_time = 0
         self.cooldown = 1  # cooldown entre chaque panier (en s)
-        
+        self.is_multiplayer = False  # Mode multijoueur ou IA
+
         # Création des boutons
         self.single_player_button_rect = pg.Rect(540, 310, 200, 50)
         self.multiplayer_button_rect = pg.Rect(540, 370, 200, 50)
@@ -24,10 +27,15 @@ class Partie:
     def reset(self):
         # Réinitialisation de la partie
         self.score = [0, 0]
+        self.current_player = 0 # on commence avec le joueur 1
         self.start_time = time.time()
         self.game_started = False
         self.selecting_game_mode = False
-    
+
+    def switch_turn(self):
+        # Changement de tour
+        self.current_player = 1 - self.current_player  # Alterne entre 0(joueur 1) et 1(joueur 2/IA)
+
     def get_remaining_time(self):
         # Calcul du temps restant
         elapsed_time = time.time() - self.start_time
@@ -63,7 +71,11 @@ class Partie:
         # Gestion des événements de la partie
         if event.type == pg.MOUSEBUTTONDOWN:
             if not self.game_started and not self.selecting_game_mode:
-                if self.single_player_button_rect.collidepoint(event.pos) or self.multiplayer_button_rect.collidepoint(event.pos):
+                if self.single_player_button_rect.collidepoint(event.pos):
+                    self.is_multiplayer = False # Mode solo
+                    self.selecting_game_mode = True
+                elif self.multiplayer_button_rect.collidepoint(event.pos):
+                    self.is_multiplayer = True # Mode multijoueur
                     self.selecting_game_mode = True
             elif self.selecting_game_mode:
                 if self.game_mode_10s_button_rect.collidepoint(event.pos):
@@ -84,44 +96,59 @@ class Partie:
             elif self.game_started and self.get_remaining_time() == 0:
                 if self.go_back_button_rect.collidepoint(event.pos):
                     self.reset_game(joueur, terrain, balle)
-        
+
         if self.game_started:
-            balle.handle_event(event, joueur.position)
-            if event.type == pg.KEYDOWN:#si tu appuyes sur J, dessine les hitbox
+            if self.current_player == 0 or self.is_multiplayer:
+                balle.handle_event(event, joueur.position)
+            elif self.current_player == 1 and not self.is_multiplayer:
+                self.ia_take_turn(balle) # IA effectue son tir automatiquement
+            if event.type == pg.KEYDOWN: # si tu appuyes sur J, dessine les hitbox
                 if event.key == pg.K_j:
                     self.show_hitboxes = not self.show_hitboxes
-    
+
+    def ia_take_turn(self, balle):
+        # Logique pour que l'IA effectue un tir
+        if balle.shooting_mode and not balle.flying:
+            angle = random.randint(30, 60)  # Angle aléatoire
+            strength = random.randint(30, 70)  # Puissance aléatoire
+            balle.shoot(angle, strength)
+            balle.flying = True
+            balle.shooting_mode = False
+
     def update(self, fenetre, background_image, joueur, terrain, balle):
         # Mise à jour et rendu de la partie
         fenetre.fill((255, 255, 255))
-        
+
         if self.game_started:
             remaining_time = self.get_remaining_time()
-            
+
             if remaining_time == 0: #affiche écran de fin quand plus de temps
                 fenetre.blit(background_image, (0, 0))
-                self.draw_text(fenetre, f"Score: {self.score[0]}", (640, 360), 100, (255, 255, 255))
+                self.draw_text(fenetre, f"Score Joueur 1: {self.score[0]}", (640, 300), 50, (255, 255, 255))
+                self.draw_text(fenetre, f"Score Joueur 2: {self.score[1]}", (640, 360), 50, (255, 255, 255))
                 self.draw_button(fenetre, "Menu Principal", self.go_back_button_rect, (255, 0, 0), (200, 0, 0))
             else:
                 terrain.afficherTerrain(fenetre)
-                
+
                 # Si la balle est en mode shooting et n'est pas en train d'être traînée, la balle se met sur le joueur
                 if balle.shooting_mode and not balle.dragging and not balle.flying:
                     balle.position = [joueur.position[0], joueur.position[1] - 30]
                     balle.rect.topleft = balle.position
-                
+
                 joueur.draw(fenetre)
                 balle.update_position(fenetre.get_width(), fenetre.get_height())
                 balle.draw(fenetre)
-                
-                self.draw_text(fenetre, f"Score: {self.score[0]}", (640, 50), 50, (0, 0, 0))
-                self.draw_text(fenetre, f"Temps: {int(remaining_time)}s", (1180, 50), 50, (0, 0, 0))
+
                 # Ajout d'une instruction pour le tir manuel
-                self.draw_text(fenetre, "Appuyez sur C pour tir manuel", (640, 100), 24, (0, 0, 0))
-                
+                self.draw_text(fenetre, "Appuyez sur C pour tir manuel", (640, 105), 24, (0,0,0))
+                self.draw_text(fenetre, f"Score Joueur 1: {self.score[0]}", (200, 40), 30, (0, 0, 0))
+                self.draw_text(fenetre, f"Score Joueur 2: {self.score[1]}", (1080, 40), 30, (0, 0, 0))
+                self.draw_text(fenetre, f"Temps: {int(remaining_time)}s", (640, 50), 50, (0, 0, 0))
+                self.draw_text(fenetre, f"Tour: Joueur {self.current_player + 1}", (640, 80), 30, (0, 0, 0))
+
                 self.check_panier_collision(terrain, balle)
                 terrain.afficherPanier(fenetre)
-                
+
                 if self.show_hitboxes:
                     self.draw_hitboxes(fenetre, terrain, balle)
         else:
@@ -140,15 +167,15 @@ class Partie:
         panier_rect_full = terrain.panier.get_rect(topleft=terrain.positionPanier)
         hitbox_height = 50
         panier_rect = pg.Rect(panier_rect_full.left, panier_rect_full.top + 10, panier_rect_full.width, hitbox_height)
-        
         current_time = time.time()
-        if self.check_collision(balle_rect, panier_rect) and (current_time - self.last_hoop_time) > self.cooldown:  #si collision + pas en cooldown
-            terrain.positionPanier = terrain.genererPositionPanier() #bouge panier
-            self.last_hoop_time = current_time #reset cooldown
-            self.score[0] += 1
-            # Réinitialisation de la balle en mode shooting après un panier
-            balle.shooting_mode = True
+        # Réinitialisation de la balle en mode shooting après un panier
+        if self.check_collision(balle_rect, panier_rect) and (current_time - self.last_hoop_time) > self.cooldown: # si collision + pas de ccooldown
+            terrain.positionPanier = terrain.genererPositionPanier() # bouge le panier
+            self.last_hoop_time = current_time # reset cooldown
+            self.score[self.current_player] += 1
+            balle.shooting_mode = True # réinitialision de la balle en mode shooting après un panier
             balle.flying = False
+            self.switch_turn() # on change de joueur après un panier
         
         if not self.is_hitbox_within_terrain(panier_rect, terrain.largeur, terrain.hauteur):
             terrain.positionPanier = terrain.genererPositionPanier()
@@ -178,5 +205,3 @@ class Partie:
         balle.shooting_mode = True
         balle.flying = False
         self.reset()
-
-        
