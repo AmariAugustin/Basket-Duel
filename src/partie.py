@@ -99,7 +99,7 @@ class Partie:
 
         if self.game_started:
             if self.current_player == 0 or self.is_multiplayer:
-                balle.handle_event(event, joueur.position)
+                balle.handle_event(event, joueur.position, self)
             elif self.current_player == 1 and not self.is_multiplayer:
                 self.ia_take_turn(balle) # IA effectue son tir automatiquement
             if event.type == pg.KEYDOWN: # si tu appuyes sur J, dessine les hitbox
@@ -114,6 +114,7 @@ class Partie:
             balle.shoot(angle, strength)
             balle.flying = True
             balle.shooting_mode = False
+            self.switch_turn()
 
     def update(self, fenetre, background_image, joueur, terrain, balle):
         # Mise à jour et rendu de la partie
@@ -172,11 +173,10 @@ class Partie:
         if self.check_collision(balle_rect, panier_rect) and (current_time - self.last_hoop_time) > self.cooldown: # si collision + pas de ccooldown
             terrain.positionPanier = terrain.genererPositionPanier() # bouge le panier
             self.last_hoop_time = current_time # reset cooldown
-            self.score[self.current_player] += 1
+            self.score[1-self.current_player] += 1 #comme on change de joueur au moment du tir, on ajoute le point au joueur précédent
             balle.shooting_mode = True # réinitialision de la balle en mode shooting après un panier
             balle.flying = False
             joueur.position = joueur.genererPositionJoueur()
-            self.switch_turn() # on change de joueur après un panier
         
         if not self.is_hitbox_within_terrain(panier_rect, terrain.largeur, terrain.hauteur):
             terrain.positionPanier = terrain.genererPositionPanier()

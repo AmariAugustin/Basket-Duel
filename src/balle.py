@@ -1,5 +1,6 @@
 import pygame as pg
 import math
+from partie import Partie
 
 class Balle:
     def __init__(self, position, speed=1, gravity=0.5, friction=0.99):
@@ -65,7 +66,7 @@ class Balle:
 
         self.rect.topleft = self.position
 
-    def handle_event(self, event, joueur_position):
+    def handle_event(self, event, joueur_position, Partie):
         # Gestion du mode sélecteur d'angle et de puissance
         if self.show_shot_selectors:
             if event.type == pg.MOUSEBUTTONDOWN:
@@ -94,6 +95,8 @@ class Balle:
                     self.shoot(self.angle_value, strength)
                     self.flying = True
                     self.shooting_mode = False
+                    Partie.switch_turn()  # Passe au joueur suivant
+
                     
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 # Annuler le mode sélecteur avec la touche Échap
