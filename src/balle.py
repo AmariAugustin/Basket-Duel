@@ -1,7 +1,8 @@
 import pygame as pg
 import math
 import serveur
-
+import client
+import time
 
 class Balle:
     def __init__(self, position, speed=1, gravity=0.5, friction=0.99):
@@ -114,14 +115,21 @@ class Balle:
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_a and self.shooting_mode and not self.flying:
                 s.run()
-                s.send("Envoyer l'angle")
                 angle = int(s.receive().decode())
-                s.send("Envoyer la force")  
+                print(angle)
                 force = int(s.receive().decode())
+                print(force)
                 self.shoot(angle, force)
                 self.flying = True
                 self.shooting_mode = False  
                 return
+        
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_z and self.shooting_mode and not self.flying:
+                c = client.Client()
+                c.send("90")
+                time.sleep(1)
+                c.send("50")
                 
         # Gestion du clic sur la balle uniquement en mode shooting
         if event.type == pg.MOUSEBUTTONDOWN:

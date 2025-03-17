@@ -14,7 +14,7 @@ class Client:
     def close(self):
         self.s.close()
 
-
+"""
 # Test
 client = Client()
 
@@ -23,5 +23,6 @@ while True:
     msg = input(msgR.decode())
     client.send(msg)
     if msg == "exit":
-        break
+        break"
+"""
 
