@@ -16,8 +16,9 @@ class Partie:
         self.cooldown = 1
         self.is_multiplayer = False
         self.last_asset_spawn_time = 0
-        self.asset_spawn_interval = 3  
-        self.active_effects = {}  
+        self.asset_spawn_interval = 3  # Default asset spawn interval
+        self.active_effects = {}  # Dictionary to keep track of active effects
+        self.show_cheats_menu = False  # Flag to show/hide cheats menu
         # Création des boutons
         self.single_player_button_rect = pg.Rect(540, 310, 200, 50)
         self.multiplayer_button_rect = pg.Rect(540, 370, 200, 50)
@@ -25,6 +26,10 @@ class Partie:
         self.game_mode_30s_button_rect = pg.Rect(540, 370, 200, 50)
         self.game_mode_60s_button_rect = pg.Rect(540, 430, 200, 50)
         self.go_back_button_rect = pg.Rect(540, 490, 200, 50)
+        self.cheats_button_rect = pg.Rect(540, 550, 200, 50)
+        self.double_points_button_rect = pg.Rect(540, 310, 200, 50)
+        self.double_speed_button_rect = pg.Rect(540, 370, 200, 50)
+        self.low_gravity_button_rect = pg.Rect(540, 430, 200, 50)
 
     def reset(self):
         self.score = [0, 0]
@@ -93,6 +98,15 @@ class Partie:
             elif self.game_started and self.get_remaining_time() == 0:
                 if self.go_back_button_rect.collidepoint(event.pos):
                     self.reset_game(joueur, terrain, balle)
+            elif self.show_cheats_menu:
+                if self.double_points_button_rect.collidepoint(event.pos):
+                    self.toggle_cheat("double_points", balle)
+                elif self.double_speed_button_rect.collidepoint(event.pos):
+                    self.toggle_cheat("double_speed", balle)
+                elif self.low_gravity_button_rect.collidepoint(event.pos):
+                    self.toggle_cheat("low_gravity", balle)
+                elif self.go_back_button_rect.collidepoint(event.pos):
+                    self.show_cheats_menu = False
 
         if self.game_started:
             if self.current_player == 0 or self.is_multiplayer:
@@ -102,6 +116,8 @@ class Partie:
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_j:
                     self.show_hitboxes = not self.show_hitboxes
+                elif event.key == pg.K_f:
+                    self.show_cheats_menu = not self.show_cheats_menu
 
     def ia_take_turn(self, balle):
         if balle.shooting_mode and not balle.flying:
@@ -162,6 +178,9 @@ class Partie:
             else:
                 self.draw_button(fenetre, "Single Player", self.single_player_button_rect, (0, 255, 0), (0, 200, 0))
                 self.draw_button(fenetre, "Multiplayer", self.multiplayer_button_rect, (0, 0, 255), (0, 0, 200))
+
+        if self.show_cheats_menu:
+            self.draw_cheats_menu(fenetre)
 
     def check_panier_collision(self, terrain, balle):
         balle_rect = balle.rect
@@ -237,3 +256,32 @@ class Partie:
 
     def set_asset_spawn_interval(self, interval):
         self.asset_spawn_interval = interval
+
+    def draw_cheats_menu(self, fenetre):
+        self.draw_button(fenetre, "Double Points", self.double_points_button_rect, (0, 255, 0), (0, 200, 0))
+        self.draw_button(fenetre, "Double Speed", self.double_speed_button_rect, (0, 0, 255), (0, 0, 200))
+        self.draw_button(fenetre, "Low Gravity", self.low_gravity_button_rect, (255, 165, 0), (200, 130, 0))
+        self.draw_button(fenetre, "Back", self.go_back_button_rect, (255, 0, 0), (200, 0, 0))
+
+    def toggle_cheat(self, cheat, balle):
+        current_time = time.time()
+        effect_duration = 10  # durée des power ups
+        if cheat == "double_points":
+            if "double_points" in self.active_effects:
+                del self.active_effects["double_points"]
+            else:
+                self.active_effects["double_points"] = current_time + effect_duration
+        elif cheat == "double_speed":
+            if "double_speed" in self.active_effects:
+                balle.speed /= 2
+                del self.active_effects["double_speed"]
+            else:
+                balle.speed *= 2
+                self.active_effects["double_speed"] = current_time + effect_duration
+        elif cheat == "low_gravity":
+            if "low_gravity" in self.active_effects:
+                balle.gravity *= 2
+                del self.active_effects["low_gravity"]
+            else:
+                balle.gravity /= 2
+                self.active_effects["low_gravity"] = current_time + effect_duration
