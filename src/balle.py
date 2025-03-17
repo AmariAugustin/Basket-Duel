@@ -21,6 +21,7 @@ class Balle:
         self.flying = False  # Indique si la balle est en vol (après un tir)
         self.prev_mouse_pos = None
         
+        
         # init du sprite de la balle
         self.balle_image = pg.transform.scale(pg.image.load("assets/basketball.png"), (50, 50))
         self.rect = self.balle_image.get_rect(topleft=self.position)
@@ -234,4 +235,12 @@ class Balle:
         pg.draw.line(fenetre, (255, 0, 0), (start_x, start_y), (end_x, end_y), 10)
         pg.draw.circle(fenetre, (255, 0, 0), (int(end_x), int(end_y)), 10)
         
+    def afficherAssets(self, fenetre):
+        current_time = time.time()
+        for asset, position in list(self.asset_positions.items()):
+            if current_time - self.asset_timers[asset] > 5:
+                del self.asset_positions[asset]
+                del self.asset_timers[asset]
+            else:
+                fenetre.blit(self.assets[asset], position)
         
