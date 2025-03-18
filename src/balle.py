@@ -70,7 +70,6 @@ class Balle:
 
     def handle_event(self, event, joueur_position):
         s = serveur.Serveur()
-        c = client.Client()
         # Gestion du mode sélecteur d'angle et de puissance
         if self.show_shot_selectors:            
             if event.type == pg.MOUSEBUTTONDOWN:
@@ -127,7 +126,7 @@ class Balle:
         
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_z and self.shooting_mode and not self.flying:
-                c.connect("localhost", 1111)
+                c = client.Client()
                 c.send("90")
                 time.sleep(1)
                 c.send("50")
@@ -234,5 +233,3 @@ class Balle:
         # Dessiner la ligne d'indication
         pg.draw.line(fenetre, (255, 0, 0), (start_x, start_y), (end_x, end_y), 10)
         pg.draw.circle(fenetre, (255, 0, 0), (int(end_x), int(end_y)), 10)
-        
-        

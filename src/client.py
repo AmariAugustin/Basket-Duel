@@ -3,9 +3,7 @@ import socket
 class Client:
     def __init__(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
-    def connect(self,ip,port):
-        self.s.connect((ip,port))
+        self.s.connect(("localhost", 1111))
 
     def send(self,msg):
         self.s.send(msg.encode())

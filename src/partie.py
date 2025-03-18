@@ -98,11 +98,11 @@ class Partie:
                 if self.sever_button_rect.collidepoint(event.pos):
                     self.is_server = True
                     print("Création du serveur")
-                    self.create_server()
+                    pass
                 elif self.client_button_rect.collidepoint(event.pos):
                     self.is_client = True
                     print("Création du client")
-                    self.create_client()
+                    pass
                 
 
             elif self.selecting_game_mode:
@@ -238,17 +238,3 @@ class Partie:
         balle.shooting_mode = True
         balle.flying = False
         self.reset()
-
-    def create_server(self):
-        # Création du serveur
-        s = serveur.Serveur()
-        s.run()
-        print("Serveur démarré")
-        return s
-
-    def create_client(self):
-        # Création du client
-        c = client.Client()
-        c.connect("localhost", 1111)
-        print("Client connecté")
-        return c
