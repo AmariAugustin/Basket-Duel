@@ -1,11 +1,6 @@
-import random
 import pygame as pg
-import os
+import random
 import time
-
-# Chargement des fichiers
-sourceFileDir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(sourceFileDir)
 
 class Terrain:
     def __init__(self):
@@ -17,12 +12,14 @@ class Terrain:
         self.balle = pg.transform.scale(self.balle, (50, 50))
         self.panier = pg.image.load("assets/panier.png")
         self.panier = pg.transform.scale(self.panier, (250, 250))
-
-        # Define assets
+        self.one_image = pg.image.load("assets/one.png")
+        self.one_image = pg.transform.scale(self.one_image, (50, 50))  
+        
         self.assets = {
             "double_points": pg.image.load("assets/double_points.png"),
             "double_speed": pg.image.load("assets/double_speed.png"),
-            "low_gravity": pg.image.load("assets/low_gravity.png")
+            "low_gravity": pg.image.load("assets/low_gravity.png"),
+            "plus_one": pg.image.load("assets/plus_one.png")  
         }
         self.asset_positions = {}
         self.asset_timers = {}
@@ -55,3 +52,6 @@ class Terrain:
                 del self.asset_timers[asset]
             else:
                 fenetre.blit(self.assets[asset], position)
+
+    def afficherOne(self, fenetre, position):
+        fenetre.blit(self.one_image, position)

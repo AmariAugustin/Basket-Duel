@@ -5,6 +5,7 @@ from Terrain import Terrain
 from balle import Balle
 from partie import Partie
 import os
+import time
 
 pg.init()
 clock = pg.time.Clock()
@@ -47,6 +48,11 @@ while True:
         partie.handle_event(event, joueur, terrain, balle)
 
     partie.update(fenetre, background_image, joueur, terrain, balle)
+
+    if partie.one_position and time.time() - partie.one_display_time < 1:
+        partie.draw_one(fenetre)
+    else:
+        partie.one_position = None
 
     pg.display.flip()
     clock.tick(60)
