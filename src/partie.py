@@ -150,7 +150,7 @@ class Partie:
                 terrain.afficherTerrain(fenetre)
                 terrain.afficherAssets(fenetre)
 
-                # Spawn assets less frequently
+                
                 current_time = time.time()
                 if current_time - self.last_asset_spawn_time > self.asset_spawn_interval:
                     terrain.spawn_asset()

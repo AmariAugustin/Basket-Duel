@@ -13,7 +13,7 @@ class Terrain:
         self.panier = pg.image.load("assets/panier.png")
         self.panier = pg.transform.scale(self.panier, (250, 250))
         self.one_image = pg.image.load("assets/one.png")
-        self.one_image = pg.transform.scale(self.one_image, (50, 50))  
+        self.one_image = pg.transform.scale(self.one_image, (75, 75))  
         
         self.assets = {
             "double_points": pg.image.load("assets/double_points.png"),
@@ -21,6 +21,9 @@ class Terrain:
             "low_gravity": pg.image.load("assets/low_gravity.png"),
             "plus_one": pg.image.load("assets/plus_one.png")  
         }
+        for key in self.assets: #resize tout les assets a 75px
+            self.assets[key] = pg.transform.scale(self.assets[key], (75, 75))
+        
         self.asset_positions = {}
         self.asset_timers = {}
 

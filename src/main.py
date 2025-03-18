@@ -26,8 +26,8 @@ terrain = Terrain()
 joueur = Joueur()
 partie = Partie()
 
-# Set the asset spawn interval to 5 seconds
-partie.set_asset_spawn_interval(5)
+
+partie.set_asset_spawn_interval(9)
 
 # Initialisation de la balle en mode shooting
 balle = Balle([joueur.position[0], joueur.position[1] - 30], speed=2)
