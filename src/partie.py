@@ -199,20 +199,26 @@ class Partie:
         balle_rect = balle.rect
         panier_rect_full = terrain.panier.get_rect(topleft=terrain.positionPanier)
         hitbox_height = 50
-        panier_rect = pg.Rect(panier_rect_full.left, panier_rect_full.top + 10, panier_rect_full.width, hitbox_height)
+        top_hitbox = pg.Rect(panier_rect_full.left, panier_rect_full.top, panier_rect_full.width, hitbox_height)
+        side_hitbox_left = pg.Rect(panier_rect_full.left, panier_rect_full.top + hitbox_height, hitbox_height, panier_rect_full.height - hitbox_height)
+        side_hitbox_right = pg.Rect(panier_rect_full.right - hitbox_height, panier_rect_full.top + hitbox_height, hitbox_height, panier_rect_full.height - hitbox_height)
         current_time = time.time()
-        if self.check_collision(balle_rect, panier_rect) and (current_time - self.last_hoop_time) > self.cooldown:
+
+        if self.check_collision(balle_rect, top_hitbox) and (current_time - self.last_hoop_time) > self.cooldown:
             terrain.positionPanier = terrain.genererPositionPanier()
             self.last_hoop_time = current_time
-            points = 2 if "double_points" in self.active_effects else 1 
+            points = 2 if "double_points" in self.active_effects else 1
             self.score[self.current_player] += points
             balle.shooting_mode = True
             balle.flying = False
             self.switch_turn()
-            self.one_position = [terrain.positionPanier[0] + 50, terrain.positionPanier[1]]  
+            self.one_position = [terrain.positionPanier[0] + 50, terrain.positionPanier[1]]
             self.one_display_time = current_time
 
-        if not self.is_hitbox_within_terrain(panier_rect, terrain.largeur, terrain.hauteur):
+        if self.check_collision(balle_rect, side_hitbox_left) or self.check_collision(balle_rect, side_hitbox_right):
+            balle.velocity_x = -balle.velocity_x  # Bounce on the sides
+
+        if not self.is_hitbox_within_terrain(panier_rect_full, terrain.largeur, terrain.hauteur):
             terrain.positionPanier = terrain.genererPositionPanier()
 
     def check_asset_collision(self, balle, terrain):
