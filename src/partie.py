@@ -1,6 +1,8 @@
 import pygame as pg
 import time
 import random
+import client
+import serveur
 
 class Partie:
     def __init__(self):
@@ -15,6 +17,10 @@ class Partie:
         self.last_hoop_time = 0
         self.cooldown = 1  # cooldown entre chaque panier (en s)
         self.is_multiplayer = False  # Mode multijoueur ou IA
+        self.is_online = False  # Mode en ligne
+        self.is_server = False  # Mode serveur ou client    
+        self.is_client = False  # Mode client
+        self.waiting_for_server = False  # Attente de connexion au serveur
 
         # Création des boutons
         self.single_player_button_rect = pg.Rect(540, 310, 200, 50)
@@ -23,6 +29,14 @@ class Partie:
         self.game_mode_30s_button_rect = pg.Rect(540, 370, 200, 50)
         self.game_mode_60s_button_rect = pg.Rect(540, 430, 200, 50)
         self.go_back_button_rect = pg.Rect(540, 490, 200, 50)
+        self.online_button_rect = pg.Rect(540, 430, 200, 50)
+        self.sever_button_rect = pg.Rect(540, 490, 200, 50)
+        self.client_button_rect = pg.Rect(540, 550, 200, 50)
+
+        # Creation des inputs
+        self.input_ip_rect = pg.Rect(540, 310, 200, 50)
+        self.input_port_rect = pg.Rect(540, 370, 200, 50)
+        self.valid_button_rect = pg.Rect(540, 430, 200, 50)
 
     def reset(self):
         # Réinitialisation de la partie
@@ -77,6 +91,20 @@ class Partie:
                 elif self.multiplayer_button_rect.collidepoint(event.pos):
                     self.is_multiplayer = True # Mode multijoueur
                     self.selecting_game_mode = True
+                elif self.online_button_rect.collidepoint(event.pos):
+                    self.is_online = True
+            
+            elif not self.game_started and self.is_online:
+                if self.sever_button_rect.collidepoint(event.pos):
+                    self.is_server = True
+                    print("Création du serveur")
+                    self.create_server()
+                elif self.client_button_rect.collidepoint(event.pos):
+                    self.is_client = True
+                    print("Création du client")
+                    self.create_client()
+                
+
             elif self.selecting_game_mode:
                 if self.game_mode_10s_button_rect.collidepoint(event.pos):
                     self.game_duration = 10
@@ -157,9 +185,14 @@ class Partie:
                 self.draw_button(fenetre, "10s", self.game_mode_10s_button_rect, (255, 0, 0), (200, 0, 0))
                 self.draw_button(fenetre, "30s", self.game_mode_30s_button_rect, (255, 165, 0), (200, 130, 0))
                 self.draw_button(fenetre, "60s", self.game_mode_60s_button_rect, (0, 255, 0), (0, 200, 0))
-            else:
+            elif self.is_multiplayer == False and self.is_online == False:
                 self.draw_button(fenetre, "Single Player", self.single_player_button_rect, (0, 255, 0), (0, 200, 0))
                 self.draw_button(fenetre, "Multiplayer", self.multiplayer_button_rect, (0, 0, 255), (0, 0, 200))
+                self.draw_button(fenetre, "Online", self.online_button_rect, (255, 0, 0), (200, 0, 0))
+            
+            elif self.is_online and not self.is_server and not self.is_client:
+                self.draw_button(fenetre, "Server", self.sever_button_rect, (255, 0, 0), (200, 0, 0))
+                self.draw_button(fenetre, "Client", self.client_button_rect, (0, 255, 0), (0, 200, 0))
     
     def check_panier_collision(self, terrain, balle):
         # Vérification des collisions avec le panier
@@ -205,3 +238,17 @@ class Partie:
         balle.shooting_mode = True
         balle.flying = False
         self.reset()
+
+    def create_server(self):
+        # Création du serveur
+        s = serveur.Serveur()
+        s.run()
+        print("Serveur démarré")
+        return s
+
+    def create_client(self):
+        # Création du client
+        c = client.Client()
+        c.connect("localhost", 1111)
+        print("Client connecté")
+        return c
