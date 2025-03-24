@@ -68,7 +68,7 @@ class Balle:
 
         self.rect.topleft = self.position
 
-    def handle_event(self, event, joueur_position):
+    def handle_event(self, event, onlinePlayer = None, partie = None):
         s = serveur.Serveur()
         # Gestion du mode sélecteur d'angle et de puissance
         if self.show_shot_selectors:            
@@ -96,6 +96,15 @@ class Balle:
                     self.show_shot_selectors = False
                     strength = self.power_value / 2  # Ajuster la puissance
                     self.shoot(self.angle_value, strength)
+                    if isinstance(onlinePlayer, serveur.Serveur) and Balle.getPlayer() == 0:   
+                        onlinePlayer.send(str(self.angle_value))
+                        time.sleep(1)
+                        onlinePlayer.send(str(strength))
+                    
+                    if isinstance(onlinePlayer, client.Client) and Balle.getPlayer() == 1:
+                        onlinePlayer.send(str(self.angle_value))
+                        time.sleep(1)
+                        onlinePlayer.send(str(strength))
                     self.flying = True
                     self.shooting_mode = False
                     
@@ -111,6 +120,18 @@ class Balle:
                 # Activer le mode sélecteur plutôt que de demander des entrées console
                 self.show_shot_selectors = True
                 return
+    
+        if isinstance(onlinePlayer, serveur.Serveur) and Balle.getPlayer() == 0:
+            angle = int(onlinePlayer.receive().decode())
+            print(angle)
+            force = int(onlinePlayer.receive().decode())
+            print(force)
+        
+        if isinstance(onlinePlayer, client.Client) and Balle.getPlayer() == 1:
+            angle = int(onlinePlayer.receive().decode())
+            print(angle)
+            force = int(onlinePlayer.receive().decode())
+            print(force)
             
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_a and self.shooting_mode and not self.flying:

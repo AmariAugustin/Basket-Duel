@@ -21,6 +21,8 @@ class Partie:
         self.is_server = False  # Mode serveur ou client    
         self.is_client = False  # Mode client
         self.waiting_for_server = False  # Attente de connexion au serveur
+        self.serveur = None
+        self.client = None
 
         # Création des boutons
         self.single_player_button_rect = pg.Rect(540, 310, 200, 50)
@@ -94,15 +96,34 @@ class Partie:
                 elif self.online_button_rect.collidepoint(event.pos):
                     self.is_online = True
             
-            elif not self.game_started and self.is_online:
+            if self.is_online and not self.selecting_game_mode:
                 if self.sever_button_rect.collidepoint(event.pos):
                     self.is_server = True
                     print("Création du serveur")
-                    pass
+                    self.waiting_for_server = True
+                    self.serveur = self.createServer()
+                    self.waiting_for_server = False
+                    self.selecting_game_mode = True
                 elif self.client_button_rect.collidepoint(event.pos):
                     self.is_client = True
                     print("Création du client")
-                    pass
+                    self.client = self.createClient()
+                    duration = self.client.receive().decode()
+                    if duration == "60s":
+                        self.game_duration = 60
+                        self.game_started = True
+                        self.start_time = time.time()
+                        self.selecting_game_mode = False
+                    elif duration == "30s":
+                        self.game_duration = 30
+                        self.game_started = True
+                        self.start_time = time.time()
+                        self.selecting_game_mode = False
+                    elif duration == "10s":
+                        self.game_duration = 10
+                        self.game_started = True
+                        self.start_time = time.time()
+                        self.selecting_game_mode = False
                 
 
             elif self.selecting_game_mode:
@@ -111,16 +132,22 @@ class Partie:
                     self.game_started = True
                     self.start_time = time.time()
                     self.selecting_game_mode = False
+                    if self.is_online and self.is_server:
+                        self.serveur.send("10s")
                 elif self.game_mode_30s_button_rect.collidepoint(event.pos):
                     self.game_duration = 30
                     self.game_started = True
                     self.start_time = time.time()
                     self.selecting_game_mode = False
+                    if self.is_online and self.is_server:
+                        self.serveur.send("30s")
                 elif self.game_mode_60s_button_rect.collidepoint(event.pos):
                     self.game_duration = 60
                     self.game_started = True
                     self.start_time = time.time()
                     self.selecting_game_mode = False
+                    if self.is_online and self.is_server:
+                        self.serveur.send("60s")
             elif self.game_started and self.get_remaining_time() == 0:
                 if self.go_back_button_rect.collidepoint(event.pos):
                     self.reset_game(joueur, terrain, balle)
@@ -128,8 +155,12 @@ class Partie:
         if self.game_started:
             if self.current_player == 0 or self.is_multiplayer:
                 balle.handle_event(event, joueur.position)
-            elif self.current_player == 1 and not self.is_multiplayer:
+            elif self.current_player == 1 and not self.is_multiplayer and not self.is_online:
                 self.ia_take_turn(balle) # IA effectue son tir automatiquement
+            elif self.is_online and self.current_player == 1 and self.is_client:
+                balle.handle_event(event, joueur.position, self.client, self)
+            elif self.is_online and self.current_player == 0 and self.is_server:
+                balle.handle_event(event, joueur.position, self.serveur, self)
             if event.type == pg.KEYDOWN: # si tu appuyes sur J, dessine les hitbox
                 if event.key == pg.K_j:
                     self.show_hitboxes = not self.show_hitboxes
@@ -193,6 +224,9 @@ class Partie:
             elif self.is_online and not self.is_server and not self.is_client:
                 self.draw_button(fenetre, "Server", self.sever_button_rect, (255, 0, 0), (200, 0, 0))
                 self.draw_button(fenetre, "Client", self.client_button_rect, (0, 255, 0), (0, 200, 0))
+            
+            elif self.waiting_for_server:
+                self.draw_text(fenetre, "En attente de connexion...", (640, 360), 50, (0, 0, 0))
     
     def check_panier_collision(self, terrain, balle):
         # Vérification des collisions avec le panier
@@ -238,3 +272,15 @@ class Partie:
         balle.shooting_mode = True
         balle.flying = False
         self.reset()
+
+    def createServer(self):
+        s = serveur.Serveur()
+        s.run()
+        return s
+    
+    def createClient(self):
+        c = client.Client()
+        return c
+
+    def getPlayer(self):
+        return self.current_player
