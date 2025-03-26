@@ -160,9 +160,13 @@ class Partie:
                 self.ia_take_turn(balle) # IA effectue son tir automatiquement
             elif self.is_online and self.connection_established:
                 if self.is_server and self.current_player == 0:
-                    balle.handle_event(event, joueur.position, self.serveur, self)
+                    balle.handle_event(event, joueur.position)
+                    self.sync_game_state(joueur, balle, terrain)
                 elif self.is_client and self.current_player == 1:
-                    balle.handle_event(event, joueur.position, self.client, self)
+                    balle.handle_event(event, joueur.position)
+                    self.sync_game_state(joueur, balle, terrain)
+                else:
+                    self.receive_game_state(joueur, balle, terrain)
             if event.type == pg.KEYDOWN: # si tu appuyes sur J, dessine les hitbox
                 if event.key == pg.K_j:
                     self.show_hitboxes = not self.show_hitboxes
@@ -179,72 +183,72 @@ class Partie:
     def sync_game_state(self, joueur, balle, terrain):
         if self.is_online and self.connection_established:
             try:
+                game_state = {
+                    'score': self.score,
+                    'player_pos': joueur.position,
+                    'ball_pos': balle.position,
+                    'ball_velocity': [balle.velocity_x, balle.velocity_y],
+                    'ball_flying': balle.flying,
+                    'ball_shooting_mode': balle.shooting_mode,
+                    'hoop_pos': terrain.positionPanier,
+                    'current_player': self.current_player
+                }
+                game_state_json = json.dumps(game_state)
+                
                 if self.is_server and self.current_player == 0:
-                    # Server sends game state
-                    game_state = {
-                        'score': self.score,
-                        'player_pos': joueur.position,
-                        'ball_pos': balle.position,
-                        'ball_velocity': [balle.velocity_x, balle.velocity_y],
-                        'ball_flying': balle.flying,
-                        'ball_shooting_mode': balle.shooting_mode,
-                        'hoop_pos': terrain.positionPanier
-                    }
-                    self.serveur.send(str(game_state))
+                    self.serveur.send(f"STATE:{game_state_json}")
                 elif self.is_client and self.current_player == 1:
-                    # Client sends game state
-                    game_state = {
-                        'score': self.score,
-                        'player_pos': joueur.position,
-                        'ball_pos': balle.position,
-                        'ball_velocity': [balle.velocity_x, balle.velocity_y],
-                        'ball_flying': balle.flying,
-                        'ball_shooting_mode': balle.shooting_mode,
-                        'hoop_pos': terrain.positionPanier
-                    }
-                    self.client.send(str(game_state))
+                    self.client.send(f"STATE:{game_state_json}")
             except Exception as e:
                 print(f"Erreur lors de la synchronisation: {e}")
+                self.connection_established = False
 
     def receive_game_state(self, joueur, balle, terrain):
         if self.is_online and self.connection_established:
             try:
                 if self.is_server and self.current_player == 1:
-                    # Server receives game state from client
                     data = self.serveur.receive()
                     if data is None:
                         print("Connexion perdue avec le client")
                         self.connection_established = False
                         return
-                    try:
-                        game_state = eval(data)
-                        self.score = game_state['score']
-                        joueur.position = game_state['player_pos']
-                        balle.position = game_state['ball_pos']
-                        balle.velocity_x, balle.velocity_y = game_state['ball_velocity']
-                        balle.flying = game_state['ball_flying']
-                        balle.shooting_mode = game_state['ball_shooting_mode']
-                        terrain.positionPanier = game_state['hoop_pos']
-                    except (SyntaxError, KeyError) as e:
-                        print(f"Erreur lors du parsing de l'état: {e}")
+                    
+                    if isinstance(data, str) and data.startswith("STATE:"):
+                        try:
+                            game_state = json.loads(data[6:])
+                            self.score = game_state['score']
+                            joueur.position = game_state['player_pos']
+                            balle.position = game_state['ball_pos']
+                            balle.velocity_x, balle.velocity_y = game_state['ball_velocity']
+                            balle.flying = game_state['ball_flying']
+                            balle.shooting_mode = game_state['ball_shooting_mode']
+                            terrain.positionPanier = game_state['hoop_pos']
+                            self.current_player = game_state['current_player']
+                        except json.JSONDecodeError as e:
+                            print(f"Erreur lors du parsing JSON: {e}")
+                            self.connection_established = False
+                            
                 elif self.is_client and self.current_player == 0:
-                    # Client receives game state from server
                     data = self.client.receive()
                     if data is None:
                         print("Connexion perdue avec le serveur")
                         self.connection_established = False
                         return
-                    try:
-                        game_state = eval(data)
-                        self.score = game_state['score']
-                        joueur.position = game_state['player_pos']
-                        balle.position = game_state['ball_pos']
-                        balle.velocity_x, balle.velocity_y = game_state['ball_velocity']
-                        balle.flying = game_state['ball_flying']
-                        balle.shooting_mode = game_state['ball_shooting_mode']
-                        terrain.positionPanier = game_state['hoop_pos']
-                    except (SyntaxError, KeyError) as e:
-                        print(f"Erreur lors du parsing de l'état: {e}")
+                    
+                    if isinstance(data, str) and data.startswith("STATE:"):
+                        try:
+                            game_state = json.loads(data[6:])
+                            self.score = game_state['score']
+                            joueur.position = game_state['player_pos']
+                            balle.position = game_state['ball_pos']
+                            balle.velocity_x, balle.velocity_y = game_state['ball_velocity']
+                            balle.flying = game_state['ball_flying']
+                            balle.shooting_mode = game_state['ball_shooting_mode']
+                            terrain.positionPanier = game_state['hoop_pos']
+                            self.current_player = game_state['current_player']
+                        except json.JSONDecodeError as e:
+                            print(f"Erreur lors du parsing JSON: {e}")
+                            self.connection_established = False
             except Exception as e:
                 print(f"Erreur lors de la réception de l'état: {e}")
                 self.connection_established = False

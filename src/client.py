@@ -1,5 +1,6 @@
 import socket
 import time
+import json
 
 class Client:
     def __init__(self):
@@ -37,17 +38,26 @@ class Client:
             print("Non connecté au serveur")
             return None
         try:
-            data = self.s.recv(9999999)
-            if data:
-                self.buffer += data.decode()
-                messages = self.buffer.split('\n')
-                if len(messages) > 1:
-                    self.buffer = messages[-1]
-                    for msg in messages[:-1]:
-                        if msg.startswith("SCORE:"):
-                            return int(msg[6:])
-                        elif msg.startswith("HOOP:"):
-                            return eval(msg[5:])
+            data = self.s.recv(4096)
+            if not data:
+                print("Connexion fermée par le serveur")
+                self.connected = False
+                return None
+
+            self.buffer += data.decode()
+            
+            messages = self.buffer.split('\n')
+            if len(messages) > 1:
+                self.buffer = messages[-1]
+                
+                for msg in messages[:-1]:
+                    if msg.startswith("STATE:"):
+                        return msg
+                    elif msg.startswith("SCORE:"):
+                        return int(msg[6:])
+                    elif msg.startswith("HOOP:"):
+                        return eval(msg[5:])
+            
             return None
         except Exception as e:
             print(f"Erreur lors de la réception du message: {e}")
