@@ -5,6 +5,7 @@ from Terrain import Terrain
 from balle import Balle
 from partie import Partie
 import os
+import time
 
 pg.init()
 clock = pg.time.Clock()
@@ -25,6 +26,9 @@ terrain = Terrain()
 joueur = Joueur()
 partie = Partie()
 
+
+partie.set_asset_spawn_interval(9)
+
 # Initialisation de la balle en mode shooting
 balle = Balle([joueur.position[0], joueur.position[1] - 30], speed=2)
 balle.shooting_mode = True
@@ -37,15 +41,18 @@ pg.display.set_icon(logo)
 # Boucle principale du jeu
 while True:
     for event in pg.event.get():
-        if event.type == pg.QUIT:  # ferme le jeu si fenêtre fermée
+        if event.type == pg.QUIT:
             pg.quit()
             sys.exit()
-        
+
         partie.handle_event(event, joueur, terrain, balle)
-    
-    # Mise à jour et affichage du jeu
+
     partie.update(fenetre, background_image, joueur, terrain, balle)
-    
-    # Mise à jour de l'écran
+
+    if partie.one_position and time.time() - partie.one_display_time < 1:
+        partie.draw_one(fenetre)
+    else:
+        partie.one_position = None
+
     pg.display.flip()
     clock.tick(60)

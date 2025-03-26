@@ -1,6 +1,8 @@
 import pygame as pg
 import math
-from partie import Partie
+import serveur
+import client
+import time
 
 class Balle:
     def __init__(self, position, speed=1, gravity=0.5, friction=0.99):
@@ -18,6 +20,7 @@ class Balle:
         self.shooting_mode = True  # Mode shooting activé par défaut
         self.flying = False  # Indique si la balle est en vol (après un tir)
         self.prev_mouse_pos = None
+        
         
         # init du sprite de la balle
         self.balle_image = pg.transform.scale(pg.image.load("assets/basketball.png"), (50, 50))
@@ -66,9 +69,10 @@ class Balle:
 
         self.rect.topleft = self.position
 
-    def handle_event(self, event, joueur_position, Partie):
+    def handle_event(self, event, joueur_position):
+        s = serveur.Serveur()
         # Gestion du mode sélecteur d'angle et de puissance
-        if self.show_shot_selectors:
+        if self.show_shot_selectors:            
             if event.type == pg.MOUSEBUTTONDOWN:
                 # Si l'utilisateur a cliqué, vérifier s'il a cliqué sur un sélecteur
                 mouse_pos = pg.mouse.get_pos()
@@ -95,8 +99,6 @@ class Balle:
                     self.shoot(self.angle_value, strength)
                     self.flying = True
                     self.shooting_mode = False
-                    Partie.switch_turn()  # Passe au joueur suivant
-
                     
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
                 # Annuler le mode sélecteur avec la touche Échap
@@ -110,6 +112,25 @@ class Balle:
                 # Activer le mode sélecteur plutôt que de demander des entrées console
                 self.show_shot_selectors = True
                 return
+            
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_a and self.shooting_mode and not self.flying:
+                s.run()
+                angle = int(s.receive().decode())
+                print(angle)
+                force = int(s.receive().decode())
+                print(force)
+                self.shoot(angle, force)
+                self.flying = True
+                self.shooting_mode = False  
+                return
+        
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_z and self.shooting_mode and not self.flying:
+                c = client.Client()
+                c.send("90")
+                time.sleep(1)
+                c.send("50")
                 
         # Gestion du clic sur la balle uniquement en mode shooting
         if event.type == pg.MOUSEBUTTONDOWN:
@@ -214,4 +235,12 @@ class Balle:
         pg.draw.line(fenetre, (255, 0, 0), (start_x, start_y), (end_x, end_y), 10)
         pg.draw.circle(fenetre, (255, 0, 0), (int(end_x), int(end_y)), 10)
         
+    def afficherAssets(self, fenetre):
+        current_time = time.time()
+        for asset, position in list(self.asset_positions.items()):
+            if current_time - self.asset_timers[asset] > 5:
+                del self.asset_positions[asset]
+                del self.asset_timers[asset]
+            else:
+                fenetre.blit(self.assets[asset], position)
         
