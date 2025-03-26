@@ -3,6 +3,7 @@ import time
 import random
 import client
 import serveur
+import json
 
 class Partie:
     def __init__(self):
@@ -23,6 +24,7 @@ class Partie:
         self.waiting_for_server = False  # Attente de connexion au serveur
         self.serveur = None
         self.client = None
+        self.connection_established = False  # Nouveau flag pour suivre l'état de la connexion
 
         # Création des boutons
         self.single_player_button_rect = pg.Rect(540, 310, 200, 50)
@@ -102,29 +104,18 @@ class Partie:
                     print("Création du serveur")
                     self.waiting_for_server = True
                     self.serveur = self.createServer()
-                    self.waiting_for_server = False
-                    self.selecting_game_mode = True
+                    if self.serveur:
+                        self.connection_established = True
+                        self.waiting_for_server = False
+                        self.selecting_game_mode = True
                 elif self.client_button_rect.collidepoint(event.pos):
                     self.is_client = True
                     print("Création du client")
                     self.client = self.createClient()
-                    duration = self.client.receive().decode()
-                    if duration == "60s":
-                        self.game_duration = 60
-                        self.game_started = True
-                        self.start_time = time.time()
-                        self.selecting_game_mode = False
-                    elif duration == "30s":
-                        self.game_duration = 30
-                        self.game_started = True
-                        self.start_time = time.time()
-                        self.selecting_game_mode = False
-                    elif duration == "10s":
-                        self.game_duration = 10
-                        self.game_started = True
-                        self.start_time = time.time()
-                        self.selecting_game_mode = False
-                
+                    if self.client and self.client.connected:
+                        self.waiting_for_server = True
+                        self.connection_established = True
+                        self.selecting_game_mode = True
 
             elif self.selecting_game_mode:
                 if self.game_mode_10s_button_rect.collidepoint(event.pos):
@@ -132,22 +123,32 @@ class Partie:
                     self.game_started = True
                     self.start_time = time.time()
                     self.selecting_game_mode = False
-                    if self.is_online and self.is_server:
-                        self.serveur.send("10s")
+                    if self.is_online and self.is_server and self.serveur:
+                        try:
+                            self.serveur.send("10s")
+                        except Exception as e:
+                            print(f"Erreur lors de l'envoi de la durée: {e}")
                 elif self.game_mode_30s_button_rect.collidepoint(event.pos):
                     self.game_duration = 30
                     self.game_started = True
                     self.start_time = time.time()
                     self.selecting_game_mode = False
-                    if self.is_online and self.is_server:
-                        self.serveur.send("30s")
+                    if self.is_online and self.is_server and self.serveur:
+                        try:
+                            self.serveur.send("30s")
+                        except Exception as e:
+                            print(f"Erreur lors de l'envoi de la durée: {e}")
                 elif self.game_mode_60s_button_rect.collidepoint(event.pos):
                     self.game_duration = 60
                     self.game_started = True
                     self.start_time = time.time()
                     self.selecting_game_mode = False
-                    if self.is_online and self.is_server:
-                        self.serveur.send("60s")
+                    if self.is_online and self.is_server and self.serveur:
+                        try:
+                            self.serveur.send("60s")
+                        except Exception as e:
+                            print(f"Erreur lors de l'envoi de la durée: {e}")
+
             elif self.game_started and self.get_remaining_time() == 0:
                 if self.go_back_button_rect.collidepoint(event.pos):
                     self.reset_game(joueur, terrain, balle)
@@ -157,10 +158,11 @@ class Partie:
                 balle.handle_event(event, joueur.position)
             elif self.current_player == 1 and not self.is_multiplayer and not self.is_online:
                 self.ia_take_turn(balle) # IA effectue son tir automatiquement
-            elif self.is_online and self.current_player == 1 and self.is_client:
-                balle.handle_event(event, joueur.position, self.client, self)
-            elif self.is_online and self.current_player == 0 and self.is_server:
-                balle.handle_event(event, joueur.position, self.serveur, self)
+            elif self.is_online and self.connection_established:
+                if self.is_server and self.current_player == 0:
+                    balle.handle_event(event, joueur.position, self.serveur, self)
+                elif self.is_client and self.current_player == 1:
+                    balle.handle_event(event, joueur.position, self.client, self)
             if event.type == pg.KEYDOWN: # si tu appuyes sur J, dessine les hitbox
                 if event.key == pg.K_j:
                     self.show_hitboxes = not self.show_hitboxes
@@ -173,6 +175,79 @@ class Partie:
             balle.shoot(angle, strength)
             balle.flying = True
             balle.shooting_mode = False
+
+    def sync_game_state(self, joueur, balle, terrain):
+        if self.is_online and self.connection_established:
+            try:
+                if self.is_server and self.current_player == 0:
+                    # Server sends game state
+                    game_state = {
+                        'score': self.score,
+                        'player_pos': joueur.position,
+                        'ball_pos': balle.position,
+                        'ball_velocity': [balle.velocity_x, balle.velocity_y],
+                        'ball_flying': balle.flying,
+                        'ball_shooting_mode': balle.shooting_mode,
+                        'hoop_pos': terrain.positionPanier
+                    }
+                    self.serveur.send(str(game_state))
+                elif self.is_client and self.current_player == 1:
+                    # Client sends game state
+                    game_state = {
+                        'score': self.score,
+                        'player_pos': joueur.position,
+                        'ball_pos': balle.position,
+                        'ball_velocity': [balle.velocity_x, balle.velocity_y],
+                        'ball_flying': balle.flying,
+                        'ball_shooting_mode': balle.shooting_mode,
+                        'hoop_pos': terrain.positionPanier
+                    }
+                    self.client.send(str(game_state))
+            except Exception as e:
+                print(f"Erreur lors de la synchronisation: {e}")
+
+    def receive_game_state(self, joueur, balle, terrain):
+        if self.is_online and self.connection_established:
+            try:
+                if self.is_server and self.current_player == 1:
+                    # Server receives game state from client
+                    data = self.serveur.receive()
+                    if data is None:
+                        print("Connexion perdue avec le client")
+                        self.connection_established = False
+                        return
+                    try:
+                        game_state = eval(data)
+                        self.score = game_state['score']
+                        joueur.position = game_state['player_pos']
+                        balle.position = game_state['ball_pos']
+                        balle.velocity_x, balle.velocity_y = game_state['ball_velocity']
+                        balle.flying = game_state['ball_flying']
+                        balle.shooting_mode = game_state['ball_shooting_mode']
+                        terrain.positionPanier = game_state['hoop_pos']
+                    except (SyntaxError, KeyError) as e:
+                        print(f"Erreur lors du parsing de l'état: {e}")
+                elif self.is_client and self.current_player == 0:
+                    # Client receives game state from server
+                    data = self.client.receive()
+                    if data is None:
+                        print("Connexion perdue avec le serveur")
+                        self.connection_established = False
+                        return
+                    try:
+                        game_state = eval(data)
+                        self.score = game_state['score']
+                        joueur.position = game_state['player_pos']
+                        balle.position = game_state['ball_pos']
+                        balle.velocity_x, balle.velocity_y = game_state['ball_velocity']
+                        balle.flying = game_state['ball_flying']
+                        balle.shooting_mode = game_state['ball_shooting_mode']
+                        terrain.positionPanier = game_state['hoop_pos']
+                    except (SyntaxError, KeyError) as e:
+                        print(f"Erreur lors du parsing de l'état: {e}")
+            except Exception as e:
+                print(f"Erreur lors de la réception de l'état: {e}")
+                self.connection_established = False
 
     def update(self, fenetre, background_image, joueur, terrain, balle):
         # Mise à jour et rendu de la partie
@@ -198,12 +273,36 @@ class Partie:
                 balle.update_position(fenetre.get_width(), fenetre.get_height())
                 balle.draw(fenetre)
 
-                # Ajout d'une instruction pour le tir manuel
-                self.draw_text(fenetre, "Appuyez sur C pour tir manuel", (640, 105), 24, (0,0,0))
-                self.draw_text(fenetre, f"Score Joueur 1: {self.score[0]}", (200, 40), 30, (0, 0, 0))
-                self.draw_text(fenetre, f"Score Joueur 2: {self.score[1]}", (1080, 40), 30, (0, 0, 0))
-                self.draw_text(fenetre, f"Temps: {int(remaining_time)}s", (640, 50), 50, (0, 0, 0))
-                self.draw_text(fenetre, f"Tour: Joueur {self.current_player + 1}", (640, 80), 30, (0, 0, 0))
+                # Synchronisation de l'état du jeu
+                if self.is_online and self.connection_established:
+                    if self.current_player == 0 and self.is_server:
+                        self.sync_game_state(joueur, balle, terrain)
+                    elif self.current_player == 1 and self.is_client:
+                        self.sync_game_state(joueur, balle, terrain)
+                    else:
+                        self.receive_game_state(joueur, balle, terrain)
+
+                # Affichage du score et du temps restant
+                self.draw_text(fenetre, f"Score: {self.score[0]} - {self.score[1]}", (640, 50), 36, (0, 0, 0))
+                self.draw_text(fenetre, f"Temps: {int(remaining_time)}s", (640, 100), 36, (0, 0, 0))
+
+                # Affichage du tour en mode online
+                if self.is_online:
+                    if self.is_server:
+                        if self.current_player == 0:
+                            self.draw_text(fenetre, "C'est votre tour (Serveur)", (640, 150), 36, (0, 255, 0))
+                        else:
+                            self.draw_text(fenetre, "Tour du client", (640, 150), 36, (255, 0, 0))
+                    else:  # Client
+                        if self.current_player == 1:
+                            self.draw_text(fenetre, "C'est votre tour (Client)", (640, 150), 36, (0, 255, 0))
+                        else:
+                            self.draw_text(fenetre, "Tour du serveur", (640, 150), 36, (255, 0, 0))
+
+                # Affichage des commandes de tir
+                if balle.shooting_mode and not balle.flying:
+                    self.draw_text(fenetre, "Clic gauche pour tirer", (640, 200), 24, (0, 0, 0))
+                    self.draw_text(fenetre, "Maintenez pour ajuster la puissance", (640, 230), 24, (0, 0, 0))
 
                 self.check_panier_collision(terrain, balle)
                 terrain.afficherPanier(fenetre)
@@ -226,6 +325,20 @@ class Partie:
                 self.draw_button(fenetre, "Client", self.client_button_rect, (0, 255, 0), (0, 200, 0))
             
             elif self.waiting_for_server:
+                if self.is_client:
+                    # Check for game duration from server
+                    data = self.client.receive()
+                    if data:
+                        try:
+                            duration = data.decode()
+                            if duration in ["60s", "30s", "10s"]:
+                                self.game_duration = int(duration[:-1])
+                                self.game_started = True
+                                self.start_time = time.time()
+                                self.selecting_game_mode = False
+                                self.waiting_for_server = False
+                        except Exception as e:
+                            print(f"Erreur lors de la réception de la durée: {e}")
                 self.draw_text(fenetre, "En attente de connexion...", (640, 360), 50, (0, 0, 0))
     
     def check_panier_collision(self, terrain, balle):
@@ -235,18 +348,41 @@ class Partie:
         hitbox_height = 50
         panier_rect = pg.Rect(panier_rect_full.left, panier_rect_full.top + 10, panier_rect_full.width, hitbox_height)
         current_time = time.time()
+        
         # Réinitialisation de la balle en mode shooting après un panier
-        if self.check_collision(balle_rect, panier_rect) and (current_time - self.last_hoop_time) > self.cooldown: # si collision + pas de ccooldown
-            terrain.positionPanier = terrain.genererPositionPanier() # bouge le panier
-            self.last_hoop_time = current_time # reset cooldown
+        if self.check_collision(balle_rect, panier_rect) and (current_time - self.last_hoop_time) > self.cooldown:
+            terrain.positionPanier = terrain.genererPositionPanier()
+            self.last_hoop_time = current_time
             self.score[self.current_player] += 1
-            balle.shooting_mode = True # réinitialision de la balle en mode shooting après un panier
+            
+            # Synchroniser le score et la position du panier en mode online
+            if self.is_online and self.connection_established:
+                try:
+                    if self.is_server and self.current_player == 0:
+                        self.serveur.send(f"SCORE:{self.score[self.current_player]}")
+                        self.serveur.send(f"HOOP:{terrain.positionPanier}")
+                    elif self.is_client and self.current_player == 1:
+                        self.client.send(f"SCORE:{self.score[self.current_player]}")
+                        self.client.send(f"HOOP:{terrain.positionPanier}")
+                except Exception as e:
+                    print(f"Erreur lors de la synchronisation du score: {e}")
+            
+            balle.shooting_mode = True
             balle.flying = False
-            self.switch_turn() # on change de joueur après un panier
+            self.switch_turn()
         
         if not self.is_hitbox_within_terrain(panier_rect, terrain.largeur, terrain.hauteur):
             terrain.positionPanier = terrain.genererPositionPanier()
-    
+            # Synchroniser la nouvelle position du panier en mode online
+            if self.is_online and self.connection_established:
+                try:
+                    if self.is_server:
+                        self.serveur.send(f"HOOP:{terrain.positionPanier}")
+                    elif self.is_client:
+                        self.client.send(f"HOOP:{terrain.positionPanier}")
+                except Exception as e:
+                    print(f"Erreur lors de la synchronisation du panier: {e}")
+
     def draw_hitboxes(self, fenetre, terrain, balle):
         # Affichage des hitboxes pour le débogage
         balle_rect = balle.rect
@@ -261,7 +397,15 @@ class Partie:
         pg.draw.rect(fenetre, (0, 255, 0), panier_rect, 2)  
     
     def reset_game(self, joueur, terrain, balle):
-        # Redémarrage de la partie quand elle est finie
+        # Clean up network connections
+        if self.serveur:
+            self.serveur.cleanup()
+            self.serveur = None
+        if self.client:
+            self.client.cleanup()
+            self.client = None
+        
+        # Reset game state
         joueur.position = [640, 600]  # Position par défaut du joueur
         terrain.positionPanier = terrain.genererPositionPanier()
         # Réinitialiser la balle à la position du joueur et en mode shooting
@@ -272,15 +416,46 @@ class Partie:
         balle.shooting_mode = True
         balle.flying = False
         self.reset()
+        
+        # Reset online state
+        self.is_online = False
+        self.is_server = False
+        self.is_client = False
+        self.connection_established = False
 
     def createServer(self):
-        s = serveur.Serveur()
-        s.run()
-        return s
+        try:
+            # Clean up any existing server
+            if self.serveur:
+                self.serveur.cleanup()
+            
+            s = serveur.Serveur()
+            print("Serveur créé avec succès")
+            # Start the server in a separate thread to avoid blocking
+            import threading
+            server_thread = threading.Thread(target=s.run)
+            server_thread.daemon = True  # Thread will exit when main program exits
+            server_thread.start()
+            return s
+        except Exception as e:
+            print(f"Erreur lors de la création du serveur: {e}")
+            return None
     
     def createClient(self):
-        c = client.Client()
-        return c
+        try:
+            # Clean up any existing client
+            if self.client:
+                self.client.cleanup()
+            
+            c = client.Client()
+            print("Client créé avec succès")
+            if not c.connected:
+                print("Impossible de se connecter au serveur")
+                return None
+            return c
+        except Exception as e:
+            print(f"Erreur lors de la création du client: {e}")
+            return None
 
     def getPlayer(self):
         return self.current_player

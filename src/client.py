@@ -1,18 +1,71 @@
 import socket
+import time
 
 class Client:
     def __init__(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.connect(("localhost", 1111))
+        self.connected = False
+        self.buffer = ""
+        self.connect()
 
-    def send(self,msg):
-        self.s.send(msg.encode())
+    def connect(self):
+        try:
+            self.s.connect(("localhost", 1111))
+            self.connected = True
+            print("Connecté au serveur")
+        except ConnectionRefusedError:
+            print("Serveur non disponible. Assurez-vous que le serveur est en cours d'exécution.")
+            self.connected = False
+        except Exception as e:
+            print(f"Erreur de connexion au serveur: {e}")
+            self.connected = False
+
+    def send(self, msg):
+        if not self.connected:
+            print("Non connecté au serveur")
+            return False
+        try:
+            self.s.send(f"{msg}\n".encode())
+            return True
+        except Exception as e:
+            print(f"Erreur lors de l'envoi du message: {e}")
+            self.connected = False
+            return False
 
     def receive(self):
-        return self.s.recv(9999999)
+        if not self.connected:
+            print("Non connecté au serveur")
+            return None
+        try:
+            data = self.s.recv(9999999)
+            if data:
+                self.buffer += data.decode()
+                messages = self.buffer.split('\n')
+                if len(messages) > 1:
+                    self.buffer = messages[-1]
+                    for msg in messages[:-1]:
+                        if msg.startswith("SCORE:"):
+                            return int(msg[6:])
+                        elif msg.startswith("HOOP:"):
+                            return eval(msg[5:])
+            return None
+        except Exception as e:
+            print(f"Erreur lors de la réception du message: {e}")
+            self.connected = False
+            return None
+    
+    def cleanup(self):
+        try:
+            if self.s:
+                self.s.close()
+                self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.buffer = ""
+        except Exception as e:
+            print(f"Erreur lors du nettoyage: {e}")
     
     def close(self):
-        self.s.close()
+        self.cleanup()
+        self.connected = False
 
 """
 # Test
