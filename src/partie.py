@@ -118,7 +118,7 @@ class Partie:
 
         if self.game_started:
             if self.current_player == 0 or self.is_multiplayer:
-                balle.handle_event(event, joueur.position, self)
+                balle.handle_event(event, joueur.position)
             elif self.current_player == 1 and not self.is_multiplayer:
                 self.ia_take_turn(balle)
             if event.type == pg.KEYDOWN:
@@ -171,13 +171,9 @@ class Partie:
                 self.draw_text(fenetre, f"Temps: {int(remaining_time)}s", (640, 50), 50, (0, 0, 0))
                 self.draw_text(fenetre, f"Tour: Joueur {self.current_player + 1}", (640, 80), 30, (0, 0, 0))
 
-<<<<<<< HEAD
-                self.check_panier_collision(terrain, balle, joueur)
-=======
                 self.check_panier_collision(terrain, balle)
                 self.check_asset_collision(balle, terrain)  
                 self.update_effects(balle)  
->>>>>>> refonte-hitbox-panier
                 terrain.afficherPanier(fenetre)
 
                 if self.one_position and current_time - self.one_display_time < 1:
@@ -196,17 +192,11 @@ class Partie:
             else:
                 self.draw_button(fenetre, "Single Player", self.single_player_button_rect, (0, 255, 0), (0, 200, 0))
                 self.draw_button(fenetre, "Multiplayer", self.multiplayer_button_rect, (0, 0, 255), (0, 0, 200))
-<<<<<<< HEAD
-    
-    def check_panier_collision(self, terrain, balle, joueur):
-        # Vérification des collisions avec le panier
-=======
 
         if self.show_cheats_menu:
             self.draw_cheats_menu(fenetre)
 
     def check_panier_collision(self, terrain, balle):
->>>>>>> refonte-hitbox-panier
         balle_rect = balle.rect
         panier_rect_full = terrain.panier.get_rect(topleft=terrain.positionPanier)
         hitbox_height = 50
@@ -214,22 +204,6 @@ class Partie:
         side_hitbox_left = pg.Rect(panier_rect_full.left, panier_rect_full.top + hitbox_height, hitbox_height, panier_rect_full.height - hitbox_height)
         side_hitbox_right = pg.Rect(panier_rect_full.right - hitbox_height, panier_rect_full.top + hitbox_height, hitbox_height, panier_rect_full.height - hitbox_height)
         current_time = time.time()
-<<<<<<< HEAD
-        # Réinitialisation de la balle en mode shooting après un panier
-        if self.check_collision(balle_rect, panier_rect) and (current_time - self.last_hoop_time) > self.cooldown: # si collision + pas de ccooldown
-            terrain.positionPanier = terrain.genererPositionPanier() # bouge le panier
-            self.last_hoop_time = current_time # reset cooldown
-            self.score[1-self.current_player] += 1 #comme on change de joueur au moment du tir, on ajoute le point au joueur précédent
-            balle.shooting_mode = True # réinitialision de la balle en mode shooting après un panier
-            balle.flying = False
-            joueur.position = joueur.genererPositionJoueur()
-        
-        if not self.is_hitbox_within_terrain(panier_rect, terrain.largeur, terrain.hauteur):
-            terrain.positionPanier = terrain.genererPositionPanier()
-            
-
-    
-=======
 
         if self.check_collision(balle_rect, top_hitbox) and (current_time - self.last_hoop_time) > self.cooldown:
             terrain.positionPanier = terrain.genererPositionPanier()
@@ -283,7 +257,6 @@ class Partie:
             balle.gravity *= 2  #arrete l'effet gravité
             del self.active_effects["low_gravity"]
 
->>>>>>> refonte-hitbox-panier
     def draw_hitboxes(self, fenetre, terrain, balle):
         balle_rect = balle.rect
         panier_rect_full = terrain.panier.get_rect(topleft=terrain.positionPanier)
