@@ -71,6 +71,9 @@ class Balle:
 
     def handle_event(self, event, player_position, online_player=None, partie=None):
         # Gestion du mode sélecteur d'angle et de puissance
+        if self.shooting_mode and not self.flying:
+            self.show_shot_selectors = True
+            
         if self.show_shot_selectors:            
             if event.type == pg.MOUSEBUTTONDOWN:
                 # Si l'utilisateur a cliqué, vérifier s'il a cliqué sur un sélecteur
@@ -125,15 +128,8 @@ class Balle:
                 # Annuler le mode sélecteur avec la touche Échap
                 self.show_shot_selectors = False
                 
-            return  # Ne pas traiter d'autres événements en mode sélecteur
+            return
             
-        # Ajout de la gestion de la touche pour le tir au curseur
-        if event.type == pg.KEYDOWN:
-            if event.key == pg.K_c and self.shooting_mode and not self.flying:
-                # Activer le mode sélecteur plutôt que de demander des entrées console
-                self.show_shot_selectors = True
-                return
-    
         # Réception des données de tir en mode online
         if partie and partie.is_online:
             try:
