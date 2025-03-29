@@ -69,8 +69,7 @@ class Balle:
 
         self.rect.topleft = self.position
 
-    def handle_event(self, event, joueur_position):
-        s = serveur.Serveur()
+    def handle_event(self, event, player_position, online_player=None, partie=None):
         # Gestion du mode sélecteur d'angle et de puissance
         if self.show_shot_selectors:            
             if event.type == pg.MOUSEBUTTONDOWN:
@@ -97,6 +96,28 @@ class Balle:
                     self.show_shot_selectors = False
                     strength = self.power_value / 2  # Ajuster la puissance
                     self.shoot(self.angle_value, strength)
+                    
+                    # Envoi des données de tir en mode online
+                    if partie and partie.is_online:
+                        if partie.is_server and partie.current_player == 0:
+                            # Envoyer l'état complet du tir
+                            shot_data = {
+                                'angle': self.angle_value,
+                                'strength': strength,
+                                'position': self.position,
+                                'velocity': [self.velocity_x, self.velocity_y]
+                            }
+                            online_player.send(str(shot_data))
+                        elif partie.is_client and partie.current_player == 1:
+                            # Envoyer l'état complet du tir
+                            shot_data = {
+                                'angle': self.angle_value,
+                                'strength': strength,
+                                'position': self.position,
+                                'velocity': [self.velocity_x, self.velocity_y]
+                            }
+                            online_player.send(str(shot_data))
+                    
                     self.flying = True
                     self.shooting_mode = False
                     
@@ -112,18 +133,30 @@ class Balle:
                 # Activer le mode sélecteur plutôt que de demander des entrées console
                 self.show_shot_selectors = True
                 return
-            
-        if event.type == pg.KEYDOWN:
-            if event.key == pg.K_a and self.shooting_mode and not self.flying:
-                s.run()
-                angle = int(s.receive().decode())
-                print(angle)
-                force = int(s.receive().decode())
-                print(force)
-                self.shoot(angle, force)
-                self.flying = True
-                self.shooting_mode = False  
-                return
+    
+        # Réception des données de tir en mode online
+        if partie and partie.is_online:
+            try:
+                if partie.is_server and partie.current_player == 1:
+                    # Le serveur reçoit les données du client
+                    shot_data = eval(online_player.receive().decode())
+                    self.angle_value = shot_data['angle']
+                    self.shoot(self.angle_value, shot_data['strength'])
+                    self.position = shot_data['position']
+                    self.velocity_x, self.velocity_y = shot_data['velocity']
+                    self.flying = True
+                    self.shooting_mode = False
+                elif partie.is_client and partie.current_player == 0:
+                    # Le client reçoit les données du serveur
+                    shot_data = eval(online_player.receive().decode())
+                    self.angle_value = shot_data['angle']
+                    self.shoot(self.angle_value, shot_data['strength'])
+                    self.position = shot_data['position']
+                    self.velocity_x, self.velocity_y = shot_data['velocity']
+                    self.flying = True
+                    self.shooting_mode = False
+            except:
+                pass  # Ignorer les erreurs de réception si pas de données disponibles
         
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_z and self.shooting_mode and not self.flying:
@@ -133,31 +166,23 @@ class Balle:
                 c.send("50")
                 
         # Gestion du clic sur la balle uniquement en mode shooting
-        if event.type == pg.MOUSEBUTTONDOWN:
-            # Si la balle est en mode shooting et proche du joueur, permet de la saisir
-            if self.shooting_mode and self.rect.collidepoint(event.pos):
+        if event.type == pg.MOUSEBUTTONDOWN and self.shooting_mode and not self.flying:
+            if self.rect.collidepoint(event.pos):
                 self.dragging = True
-                self.start_drag_pos = event.pos # Enregistre la position de la souris au début du drag
-                self.prev_mouse_pos = event.pos 
-                mouse_x, mouse_y = event.pos
-                self.offset_x = self.rect.x - mouse_x
-                self.offset_y = self.rect.y - mouse_y
-        
-        # Gestion du relâchement du clic
+                self.start_drag_pos = event.pos
+                self.offset_x = event.pos[0] - self.position[0]
+                self.offset_y = event.pos[1] - self.position[1]
+                self.shooting_mode = False
         elif event.type == pg.MOUSEBUTTONUP and self.dragging:
             self.dragging = False
-            end_drag_pos = event.pos
-            # Tir de la balle
-            self.shoot_from_drag(self.start_drag_pos, end_drag_pos)
-            self.flying = True  # La balle est maintenant en vol
-            self.shooting_mode = False  # Désactive le mode shooting pendant le vol
-        
-        # Gestion du mouvement de la souris pendant le drag, met a jour la position de la balle
+            self.shooting_mode = True
         elif event.type == pg.MOUSEMOTION and self.dragging:
-            mouse_x, mouse_y = event.pos
-            self.position = [mouse_x + self.offset_x, mouse_y + self.offset_y]
+            # Mise à jour de la position de la balle en fonction du mouvement de la souris
+            new_x = event.pos[0] - self.offset_x
+            new_y = event.pos[1] - self.offset_y
+            # Limiter le mouvement à la position du joueur
+            self.position = [new_x, new_y]
             self.rect.topleft = self.position
-            self.prev_mouse_pos = event.pos
 
     def request_console_shot(self):
         # Cette méthode est maintenant obsolète, remplacée par l'utilisation du mode sélecteur
@@ -235,12 +260,4 @@ class Balle:
         pg.draw.line(fenetre, (255, 0, 0), (start_x, start_y), (end_x, end_y), 10)
         pg.draw.circle(fenetre, (255, 0, 0), (int(end_x), int(end_y)), 10)
         
-    def afficherAssets(self, fenetre):
-        current_time = time.time()
-        for asset, position in list(self.asset_positions.items()):
-            if current_time - self.asset_timers[asset] > 5:
-                del self.asset_positions[asset]
-                del self.asset_timers[asset]
-            else:
-                fenetre.blit(self.assets[asset], position)
         
