@@ -29,9 +29,9 @@ partie = Partie()
 
 partie.set_asset_spawn_interval(9)
 
-# Initialisation de la balle en mode shooting
+# Initialisation de la balle
 balle = Balle([joueur.position[0], joueur.position[1] - 30], speed=2)
-balle.shooting_mode = True
+balle.shooting_mode = False
 balle.flying = False
 
 # Importation d'image
@@ -45,7 +45,7 @@ while True:
             pg.quit()
             sys.exit()
 
-        partie.handle_event(event, joueur, terrain, balle)
+        partie.handle_event(event, fenetre, joueur, terrain, balle)
 
     partie.update(fenetre, background_image, joueur, terrain, balle)
 

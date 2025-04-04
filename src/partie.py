@@ -4,6 +4,7 @@ import random
 import client
 import serveur
 import json
+import threading
 
 class Partie:
     def __init__(self):
@@ -95,83 +96,71 @@ class Partie:
         text_rect = text_surface.get_rect(center=position)
         surface.blit(text_surface, text_rect)
 
-    def handle_event(self, event, joueur, terrain, balle):
+    def handle_event(self, event, fenetre, joueur, terrain, balle):
         if event.type == pg.MOUSEBUTTONDOWN:
-            if not self.game_started and not self.selecting_game_mode:
-                if self.single_player_button_rect.collidepoint(event.pos):
-                    self.is_multiplayer = False
-                    self.selecting_game_mode = True
-                elif self.multiplayer_button_rect.collidepoint(event.pos):
-                    self.is_multiplayer = True
-                    self.selecting_game_mode = True
-                elif self.online_button_rect.collidepoint(event.pos):
-                    self.is_online = True
-            
-            if self.is_online and not self.selecting_game_mode:
-                if self.sever_button_rect.collidepoint(event.pos):
-                    self.is_server = True
-                    print("Création du serveur")
-                    self.waiting_for_server = True
-                    self.serveur = self.createServer()
-                    if self.serveur:
-                        self.connection_established = True
-                        self.waiting_for_server = False
-                        self.selecting_game_mode = True
-                elif self.client_button_rect.collidepoint(event.pos):
-                    self.is_client = True
-                    print("Création du client")
-                    self.client = self.createClient()
-                    if self.client and self.client.connected:
-                        self.waiting_for_server = True
-                        self.connection_established = True
-                        self.selecting_game_mode = True
-
-            elif self.selecting_game_mode:
-                if self.game_mode_10s_button_rect.collidepoint(event.pos):
-                    self.game_duration = 10
-                    self.game_started = True
-                    self.start_time = time.time()
-                    self.selecting_game_mode = False
-                    if self.is_online and self.is_server and self.serveur:
-                        try:
-                            self.serveur.send("10s")
-                        except Exception as e:
-                            print(f"Erreur lors de l'envoi de la durée: {e}")
-                elif self.game_mode_30s_button_rect.collidepoint(event.pos):
-                    self.game_duration = 30
-                    self.game_started = True
-                    self.start_time = time.time()
-                    self.selecting_game_mode = False
-                    if self.is_online and self.is_server and self.serveur:
-                        try:
-                            self.serveur.send("30s")
-                        except Exception as e:
-                            print(f"Erreur lors de l'envoi de la durée: {e}")
-                elif self.game_mode_60s_button_rect.collidepoint(event.pos):
-                    self.game_duration = 60
-                    self.game_started = True
-                    self.start_time = time.time()
-                    self.selecting_game_mode = False
-                    if self.is_online and self.is_server and self.serveur:
-                        try:
-                            self.serveur.send("60s")
-                        except Exception as e:
-                            print(f"Erreur lors de l'envoi de la durée: {e}")
-
-            elif self.game_started and self.get_remaining_time() == 0:
-                if self.go_back_button_rect.collidepoint(event.pos):
-                    self.reset_game(joueur, terrain, balle)
-            elif self.show_cheats_menu:
-                if self.double_points_button_rect.collidepoint(event.pos):
-                    self.toggle_cheat("double_points", balle)
-                elif self.double_speed_button_rect.collidepoint(event.pos):
-                    self.toggle_cheat("double_speed", balle)
-                elif self.low_gravity_button_rect.collidepoint(event.pos):
-                    self.toggle_cheat("low_gravity", balle)
-                elif self.plus_one_button_rect.collidepoint(event.pos):
-                    self.toggle_cheat("plus_one", balle)
-                elif self.go_back_button_rect.collidepoint(event.pos):
-                    self.show_cheats_menu = False
+            if event.button == 1:
+                if not self.game_started:
+                    if self.selecting_game_mode:
+                        if self.game_mode_10s_button_rect.collidepoint(event.pos):
+                            self.game_duration = 10
+                            self.game_started = True
+                            self.start_time = time.time()
+                            self.selecting_game_mode = False
+                            if self.is_online and self.is_server:
+                                self.serveur.send(str(self.game_duration).encode())
+                        elif self.game_mode_30s_button_rect.collidepoint(event.pos):
+                            self.game_duration = 30
+                            self.game_started = True
+                            self.start_time = time.time()
+                            self.selecting_game_mode = False
+                            if self.is_online and self.is_server:
+                                self.serveur.send(str(self.game_duration).encode())
+                        elif self.game_mode_60s_button_rect.collidepoint(event.pos):
+                            self.game_duration = 60
+                            self.game_started = True
+                            self.start_time = time.time()
+                            self.selecting_game_mode = False
+                            if self.is_online and self.is_server:
+                                self.serveur.send(str(self.game_duration).encode())
+                        elif self.go_back_button_rect.collidepoint(event.pos):
+                            self.selecting_game_mode = False
+                            self.is_online = False
+                            self.is_server = False
+                            self.is_client = False
+                            self.waiting_for_server = False
+                            self.connection_established = False
+                    elif self.is_multiplayer == False and self.is_online == False:
+                        if self.single_player_button_rect.collidepoint(event.pos):
+                            self.selecting_game_mode = True
+                        elif self.multiplayer_button_rect.collidepoint(event.pos):
+                            self.is_multiplayer = True
+                            self.selecting_game_mode = True
+                        elif self.online_button_rect.collidepoint(event.pos):
+                            self.is_online = True
+                            self.selecting_game_mode = False
+                    elif self.is_online and not self.is_server and not self.is_client:
+                        if self.sever_button_rect.collidepoint(event.pos):
+                            self.is_server = True
+                            self.createServer()
+                            self.selecting_game_mode = True
+                        elif self.client_button_rect.collidepoint(event.pos):
+                            self.is_client = True
+                            self.createClient()
+                            self.selecting_game_mode = True
+                elif self.game_started and self.get_remaining_time() == 0:
+                    if self.go_back_button_rect.collidepoint(event.pos):
+                        self.reset_game(joueur, terrain, balle)
+                elif self.show_cheats_menu:
+                    if self.double_points_button_rect.collidepoint(event.pos):
+                        self.toggle_cheat("double_points", balle)
+                    elif self.double_speed_button_rect.collidepoint(event.pos):
+                        self.toggle_cheat("double_speed", balle)
+                    elif self.low_gravity_button_rect.collidepoint(event.pos):
+                        self.toggle_cheat("low_gravity", balle)
+                    elif self.plus_one_button_rect.collidepoint(event.pos):
+                        self.toggle_cheat("plus_one", balle)
+                    elif self.go_back_button_rect.collidepoint(event.pos):
+                        self.show_cheats_menu = False
 
         if self.game_started:
             if self.current_player == 0 or self.is_multiplayer:
@@ -354,16 +343,15 @@ class Partie:
                 self.draw_button(fenetre, "10s", self.game_mode_10s_button_rect, (255, 0, 0), (200, 0, 0))
                 self.draw_button(fenetre, "30s", self.game_mode_30s_button_rect, (255, 165, 0), (200, 130, 0))
                 self.draw_button(fenetre, "60s", self.game_mode_60s_button_rect, (0, 255, 0), (0, 200, 0))
+                self.draw_button(fenetre, "Retour", self.go_back_button_rect, (0, 0, 255), (0, 0, 200))
             elif self.is_multiplayer == False and self.is_online == False:
                 self.draw_button(fenetre, "Single Player", self.single_player_button_rect, (0, 255, 0), (0, 200, 0))
                 self.draw_button(fenetre, "Multiplayer", self.multiplayer_button_rect, (0, 0, 255), (0, 0, 200))
                 self.draw_button(fenetre, "Online", self.online_button_rect, (255, 0, 0), (200, 0, 0))
-            
             elif self.is_online and not self.is_server and not self.is_client:
                 self.draw_button(fenetre, "Server", self.sever_button_rect, (255, 0, 0), (200, 0, 0))
                 self.draw_button(fenetre, "Client", self.client_button_rect, (0, 255, 0), (0, 200, 0))
-            
-            elif self.waiting_for_server:
+            elif self.waiting_for_server and not self.selecting_game_mode:
                 if self.is_client:
                     # Check for game duration from server
                     data = self.client.receive()
@@ -510,16 +498,19 @@ class Partie:
             if self.serveur:
                 self.serveur.cleanup()
             
-            s = serveur.Serveur()
+            self.serveur = serveur.Serveur()
             print("Serveur créé avec succès")
             # Start the server in a separate thread to avoid blocking
-            import threading
-            server_thread = threading.Thread(target=s.run)
+            server_thread = threading.Thread(target=self.serveur.run)
             server_thread.daemon = True  # Thread will exit when main program exits
             server_thread.start()
-            return s
+            self.connection_established = True
+            self.waiting_for_server = False
+            self.selecting_game_mode = True
+            return self.serveur
         except Exception as e:
             print(f"Erreur lors de la création du serveur: {e}")
+            self.connection_established = False
             return None
     
     def createClient(self):
@@ -528,14 +519,19 @@ class Partie:
             if self.client:
                 self.client.cleanup()
             
-            c = client.Client()
+            self.client = client.Client()
             print("Client créé avec succès")
-            if not c.connected:
+            if not self.client.connected:
                 print("Impossible de se connecter au serveur")
+                self.connection_established = False
                 return None
-            return c
+            self.connection_established = True
+            self.waiting_for_server = False
+            self.selecting_game_mode = True
+            return self.client
         except Exception as e:
             print(f"Erreur lors de la création du client: {e}")
+            self.connection_established = False
             return None
 
     def getPlayer(self):
