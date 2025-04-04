@@ -5,7 +5,7 @@ Projet universitaire réalisé à l'Université Paris-Saclay (Évry-Val-d'Essonn
 **Auteurs :**
 - Amari Augustin
 - Annadoure Souriya
-- Samy Benaïssa
+- Benaïssa Samy 
 
 Basket Duel est un jeu de basket-ball compétitif en 2D où deux joueurs s'affrontent au tour par tour. Le jeu propose un mode multijoueur en réseau local et un mode contre l'IA.
 
