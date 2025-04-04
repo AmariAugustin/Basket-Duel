@@ -34,6 +34,15 @@ class Balle:
         self.angle_value = 45  # Valeur par défaut
 
     def update_position(self, window_width, window_height):
+        """
+        Fonction pour mettre à jour la position de la balle en fonction de sa vitesse et de la gravité.
+        Cette fonction est appelée à chaque frame pour mettre à jour la position de la balle.
+        Elle gère également les collisions avec les bords de la fenêtre.
+
+        Args:
+            window_width (int): Largeur de la fenêtre.
+            window_height (int): Hauteur de la fenêtre.
+        """
         # Si la balle est attachée au joueur, on ne met pas à jour sa position
         if self.shooting_mode and not self.dragging and not self.flying:
             return
@@ -70,6 +79,16 @@ class Balle:
         self.rect.topleft = self.position
 
     def handle_event(self, event, player_position, online_player=None, partie=None):
+        """
+        Gère les événements de la balle, y compris le tir, le drag et les interactions avec la souris.
+        Ajoute également la gestion des événements pour le mode sélecteur d'angle et de puissance.
+        
+        Args:
+            event (pygame.event.Event): L'événement à traiter.
+            player_position (list): La position du joueur sous la forme [x, y].
+            online_player (object, optional): L'objet de communication en ligne. Par défaut None.
+            partie (object, optional): L'objet représentant la partie en cours. Par défaut None.
+        """
         # Gestion du mode sélecteur d'angle et de puissance
         if self.shooting_mode and not self.flying:
             self.show_shot_selectors = True
@@ -186,6 +205,14 @@ class Balle:
         self.show_shot_selectors = True
 
     def shoot_from_drag(self, start_pos, end_pos):
+        """
+        Fonction pour tirer la balle en fonction de la position de départ et d'arrivée du drag.
+        Cette fonction calcule la direction et la force du tir en fonction de la distance entre les deux points.
+        
+        Args:
+            start_pos (tuple): La position de départ du drag sous la forme (x, y).
+            end_pos (tuple): La position d'arrivée du drag sous la forme (x, y).
+        """
         # Calcul de la direction et de la force du tir
         dx = start_pos[0] - end_pos[0]
         dy = start_pos[1] - end_pos[1]
@@ -195,12 +222,27 @@ class Balle:
         self.shoot(angle, strength)
 
     def shoot(self, angle, strength):
+        """
+        Fonction pour tirer la balle en fonction de l'angle et de la force spécifiés.
+        Cette fonction met à jour la vitesse de la balle en fonction de l'angle et de la force du tir.
+        
+        Args:
+            angle (float): L'angle du tir en degrés.
+            strength (float): La force du tir.
+        """
         # Lancement de la balle
         radian_angle = math.radians(angle)
         self.velocity_x = strength * math.cos(radian_angle)
         self.velocity_y = -strength * math.sin(radian_angle)
 
     def draw(self, fenetre):
+        """
+        Fonction pour dessiner la balle sur la fenêtre.
+        Cette fonction est appelée à chaque frame pour afficher la balle à sa position actuelle.
+
+        Args:
+            fenetre (pygame.Surface): La fenêtre sur laquelle dessiner la balle.
+        """
         # Affichage de la balle
         fenetre.blit(self.balle_image, self.position)
         
@@ -209,6 +251,13 @@ class Balle:
             self.draw_shot_selectors(fenetre)
             
     def draw_shot_selectors(self, fenetre):
+        """
+        Fonction pour dessiner les sélecteurs de puissance et d'angle sur la fenêtre.
+        Cette fonction est appelée lorsque le mode sélecteur est activé.
+
+        Args:
+            fenetre (pygame.Surface): La fenêtre sur laquelle dessiner les sélecteurs.
+        """
         # Dessiner les sélecteurs de puissance et d'angle
         
         # Sélecteur de puissance (vertical)
