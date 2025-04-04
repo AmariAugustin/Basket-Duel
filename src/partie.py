@@ -184,7 +184,7 @@ class Partie:
 
     def ia_take_turn(self, balle):
         if balle.shooting_mode and not balle.flying:
-            angle = random.randint(30, 60)
+            angle = random.randint(90, 150)
             strength = random.randint(30, 70)
             balle.shoot(angle, strength)
             balle.flying = True

@@ -7,13 +7,26 @@ class Client:
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.connected = False
         self.buffer = ""
+        self.config = self.load_config()
         self.connect()
+
+    def load_config(self):
+        config = {}
+        try:
+            with open('client_config.txt', 'r') as f:
+                for line in f:
+                    key, value = line.strip().split('=')
+                    config[key] = value
+            return config
+        except Exception as e:
+            print(f"Erreur lors de la lecture du fichier de configuration: {e}")
+            return {"ip": "localhost", "port": 1111}
 
     def connect(self):
         try:
-            self.s.connect(("localhost", 1111))
+            self.s.connect((self.config["ip"], int(self.config["port"])))
             self.connected = True
-            print("Connecté au serveur")
+            print(f"Connecté au serveur {self.config['ip']}:{self.config['port']}")
         except ConnectionRefusedError:
             print("Serveur non disponible. Assurez-vous que le serveur est en cours d'exécution.")
             self.connected = False
